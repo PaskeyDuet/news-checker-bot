@@ -2,8 +2,8 @@
 import { backButton, backMainMenu } from "#bot/keyboards/generalKeyboard.js";
 import { keywordChangeBack, prefChangeAgain } from "#bot/keyboards/newsKeyboards.js";
 import unlessActions from "./helpers/unlessActions.js";
-import { newsArrayRequester } from "#bot/api/news.js";
-import { formNPush } from "#bot/helpers/newsManagment.js";
+import { newsArrayRequester } from "#bot/helpers/news-managment/news.js";
+import { formNPush } from "#bot/helpers/news-managment/newsManagment.js";
 import { dbHelper } from "#bot/dbSetup/controllers/usersController.js";
 
 export async function newsPrefsChange(conversation, ctx) {

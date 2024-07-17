@@ -1,7 +1,7 @@
 import sendStartMessage from "#bot/handlers/sendStartMessage.js";
 import { newsSliderKeyboard } from "#bot/keyboards/newsKeyboards.js";
 
-function articleCompiler(ctx, prefCheckNum, articleNumber) {
+function articleCheckCompiler(ctx, prefCheckNum, articleNumber) {
      const articlesSessionLink = ctx.session.user.news[prefCheckNum - 1].articles
      const textObj = articlesSessionLink[articleNumber]
      let articleText = ''
@@ -22,7 +22,7 @@ export async function newsCheck(conversation, ctx) {
      const chatId = callbackObj.message.chat.id;
      const sessionedArticles = ctx.session.user.news[prefCheckNum - 1].articles
 
-     let messageText = articleCompiler(ctx, prefCheckNum, 0)
+     let messageText = articleCheckCompiler(ctx, prefCheckNum, 0)
      let newsCounter = 0
      let newsLimit = Number(process.env.NEWS_QUANTITY) - 1
      if (newsLimit > sessionedArticles.length) {
@@ -47,7 +47,7 @@ export async function newsCheck(conversation, ctx) {
                     newsCounter = 0
                }
           }
-          messageText = articleCompiler(ctx, prefCheckNum, newsCounter)
+          messageText = articleCheckCompiler(ctx, prefCheckNum, newsCounter)
           try {
                articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
                     {

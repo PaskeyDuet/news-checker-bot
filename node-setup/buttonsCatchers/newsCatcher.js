@@ -1,4 +1,4 @@
-import { requestNPush } from "#bot/helpers/newsManagment.js";
+import { requestNPush } from "#bot/helpers/news-managment/newsManagment.js";
 import { createPrefsChangeKeyboard, createNewsKeyboard, createNewsPrefsKeyboard } from "#bot/keyboards/newsKeyboards.js";
 import { Composer } from "grammy";
 

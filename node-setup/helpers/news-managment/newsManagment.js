@@ -1,8 +1,7 @@
-import { newsArrayRequester } from "#bot/api/news.js"
+import { newsArrayRequester } from "#bot/helpers/news-managment/news.js"
 import sendStartMessage from "#bot/handlers/sendStartMessage.js";
-import dateToday from "./dateToday.js";
-import { objToTranslator } from "./forPythonDataCatcher.js";
-import { sendNTranslate } from "./webServer.js";
+import dateToday from "../dateToday.js";
+import { sendNTranslate } from "../../server-routing/webServer.js";
 
 export async function formNPush(ctx, prefNum, articlesArr) {
      let articleObjectsArr = []
