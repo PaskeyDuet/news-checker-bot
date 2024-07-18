@@ -1,11 +1,10 @@
 import "dotenv/config"
-import chardet from 'chardet';
 import NewsApi from 'newsapi'
+import { articlesLimiter, filteredNewsArray } from "./newsHelpers.js";
 
 const newsapi = new NewsApi(process.env.NEWS_API_KEY)
-let newsLimit = process.env.NEWS_QUANTITY
 
-export async function newsArrayRequester(keyword) {
+export default async function (keyword) {
     //TODO: TopHeadliness - подборка самых важных новостей
     const resObj = {
         status: "ok",
@@ -42,27 +41,8 @@ export async function newsArrayRequester(keyword) {
         return resObj
     }
 
-    if (newsLimit > receivedNews.length) {
-        newsLimit = receivedNews.length
-    }
-    const newsArrayFormater = (newsArr) => {
-        const newsObj = {}
-        let filteredNLimitedNewsArr = []
+    resObj.articles.eng = filteredNewsArray(receivedNews)
 
-        const clearedNewsArr = newsArr.filter(article => article.title !== '[Removed]' && article.author !== null && article.description !== null)
-        const engLangNewsArr = clearedNewsArr.filter(article => {
-            const { lang: articleLang } = chardet.analyse(Buffer.from(article.description))[1];
-            return articleLang === "en"
-        })
-
-        newsObj.engArticles = engLangNewsArr
-        newsObj.limitedEngArrticles = filteredNLimitedNewsArr
-
-        return newsObj
-    }
-
-    const filteredNews = newsArrayFormater(receivedNews)
-    resObj.articles.eng = filteredNews
     return resObj
 }
 

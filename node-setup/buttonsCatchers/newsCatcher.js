@@ -1,4 +1,4 @@
-import { requestNPush } from "#bot/helpers/news-managment/newsManagment.js";
+import newsProcessing from "#bot/helpers/news-managment/newsProcessing.js";
 import { createPrefsChangeKeyboard, createNewsKeyboard, createNewsPrefsKeyboard } from "#bot/keyboards/newsKeyboards.js";
 import { Composer } from "grammy";
 
@@ -63,10 +63,10 @@ news.callbackQuery(/news_check/, async (ctx) => {
 news.callbackQuery(/news_explore__keyword/, async (ctx) => {
     let prefCheckNum = Number(ctx.callbackQuery.data.split("news_explore__keyword")[1]);
     ctx.session.temp.prefCheckNum = prefCheckNum
-    //TODO: make requestNPush regular
+    //TODO: make newsProcessing regular
 
     if (ctx.session.user.news[prefCheckNum - 1].articles.length === 0) {
-        await requestNPush(ctx, prefCheckNum)
+        await newsProcessing(ctx, prefCheckNum)
     }
 
     await ctx.conversation.enter("newsCheck");

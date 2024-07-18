@@ -10,7 +10,6 @@ import { news } from "./buttonsCatchers/newsCatcher.js";
 import traceRoutes from "./middleware/traceRoutes.js";
 import sendStartMessage from "./handlers/sendStartMessage.js";
 import { newsCheck } from "./conversations/newsCheck.js";
-import { sendNTranslate } from "./server-routing/webServer.js";
 
 export const bot = new Bot(`${process.env.BOT_API_TOKEN}`);
 export const app = express()
@@ -38,7 +37,7 @@ bot.command('start', async (ctx) => {
 })
 
 bot.command('ctx', async (ctx) => {
-    console.log(ctx.session.user.news[1].articles)
+    console.log(ctx.session.user)
 })
 
 bot.callbackQuery("main_menu", async (ctx) => {

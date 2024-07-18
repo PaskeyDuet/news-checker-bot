@@ -9,7 +9,7 @@ class MongoMethods {
 
      async connect() {
           await this.client.connect();
-          console.log('Connected to MongoDB');
+          // console.log('Connected to MongoDB');
           this.db = this.client.db(this.dbName);
      }
 
@@ -38,7 +38,7 @@ class MongoMethods {
 
      async close() {
           await this.client.close();
-          console.log('Connection to MongoDB closed');
+          // console.log('Connection to MongoDB closed');
      }
 }
 
@@ -50,11 +50,10 @@ export class mongoHelper extends MongoMethods {
      async insertUser(document) {
           try {
                await this.connect();
-               console.log('Database Connected');
 
                const usersCollection = "users";
                const insertOneRes = await this.insertOne(usersCollection, document);
-               console.log(insertOneRes);
+               // console.log(insertOneRes);
           } catch (e) {
                console.error(e);
           } finally {
@@ -65,8 +64,6 @@ export class mongoHelper extends MongoMethods {
      async findUser(_id) {
           try {
                await this.connect();
-               console.log('Database Connected');
-
                const usersCollection = "users";
                const foundUser = await this.findOne(usersCollection, { _id: _id });
                return foundUser
@@ -80,7 +77,6 @@ export class mongoHelper extends MongoMethods {
      async updateKeyword(id, prefNum, newKeyword) {
           try {
                await this.connect();
-               console.log('Database Connected');
                const usersCollection = "users";
                const query = { _id: id }
                const dbPrefNum = prefNum - 1
@@ -88,7 +84,7 @@ export class mongoHelper extends MongoMethods {
                const update = { $set: { ['news.' + dbPrefNum + '.keyword']: newKeyword } }
 
                const insertOneRes = await this.updateOne(usersCollection, query, update);
-               console.log(insertOneRes);
+               // console.log(insertOneRes);
           } catch (e) {
                console.error(e);
           } finally {

@@ -10,12 +10,13 @@ def translate(text):
 @app.route('/data', methods=['POST'])
 def receive_data():
     data = request.json
-    for article in data['articles']['eng']:
-        orig_title = article['title']['original']
-        article['title']['translated'] = translate(orig_title)
-        orig_description = article['description']['original']
-        article['description']['translated'] = translate(orig_description)
+
+    orig_title = data['title']['original']
+    data['title']['translated'] = translate(orig_title)
+    orig_description = data['description']['original']
+    data['description']['translated'] = translate(orig_description)
+        
     return jsonify(data)
 
 if __name__ == '__main__':
-    app.run(port=5001)
+    app.run(port=5000)

@@ -76,14 +76,18 @@ export function createNewsPrefsKeyboard(ctx) {
 export const keywordChangeBack = new InlineKeyboard()
      .text("Главное меню", "main_menu")
 
-export function newsSliderKeyboard(articlesNumber) {
+export function newsSliderKeyboard(articlesNumber, translated) {
      let checkingPrefsKeyboard = new InlineKeyboard()
+     const translateText = () => {
+          if (translated) { return "🇷🇺->🇺🇸" }
+          else { return "🇺🇸->🇷🇺" }
+     }
      if (articlesNumber === 0) {
-          checkingPrefsKeyboard.text("Перевести", "news_translate")
+          checkingPrefsKeyboard.text(translateText(), "news_translate")
                .row()
      } else {
           checkingPrefsKeyboard.text('⏪', "previous_article")
-               .text("Перевести", "news_translate")
+               .text(translateText(), "news_translate")
                .text('⏩', "next_article")
                .row()
      }
