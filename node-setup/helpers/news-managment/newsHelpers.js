@@ -80,24 +80,23 @@ const keywordsCheck = (regex, str) => regex.test(str)
 export function filteredNewsArray(newsArr, lang = "en", keyword) {
      const clearedNewsArr = newsArr.filter(article =>
           article.title !== '[Removed]' &&
-          article.author !== null)
-     console.log(clearedNewsArr.length);
-     // const langFilteredNews = clearedNewsArr.filter(article => {
-     //      const { lang: articleLang } = chardet.analyse(Buffer.from(article.title))[1];
-     //      return articleLang === lang
-     // })
-
+          article.author !== null &&
+          article.description !== null)
+     const langFilteredNews = clearedNewsArr.filter(article => {
+          const { lang: articleLang } = chardet.analyse(Buffer.from(article.description))[1];
+          return articleLang === lang
+     })
      if (keyword) {
           let keywordFilteredArr
           if (keyword.split(' ').length > 1) {
                const regExp = regexForMultiKeywords(keyword)
-               keywordFilteredArr = clearedNewsArr.filter(article =>
+               keywordFilteredArr = langFilteredNews.filter(article =>
                     keywordsCheck(regExp, article.title) ||
                     keywordsCheck(regExp, article.description) ||
                     keywordsCheck(regExp, article.content)
                )
           } else {
-               keywordFilteredArr = clearedNewsArr.filter(article =>
+               keywordFilteredArr = langFilteredNews.filter(article =>
                     article.title.split(' ').includes(keyword) ||
                     article.description.split(' ').includes(keyword) ||
                     article.content.split(' ').includes(keyword)
@@ -105,7 +104,7 @@ export function filteredNewsArray(newsArr, lang = "en", keyword) {
           }
           return keywordFilteredArr
      }
-     return clearedNewsArr
+     return langFilteredNews
 }
 
 function regexForMultiKeywords(keywordsString) {
@@ -198,22 +197,25 @@ export class NewsRequster {
                     console.log(error.message);
                     //TODO: Классифицировать проблему с API key
                     if (error.message.match(/too many results/) || error.message.match(/too many requests/)) {
+                         console.log("INSIDE");
                          this.keysIndex++
                          const res = await this.newsCatcherByKeyword(keyword)
+                         console.log("LEAVING");
                          return res
                     }
                     this.resObj.status = "error",
                          this.resObj.error = error.message
                     return this.resObj
                }
-          } while (this.currPageNumber === this.pagesLimit);
+          } while (this.currPageNumber !== this.pagesLimit);
           return this.resObj
      }
 
-     async reqTopHeads(country, keyIndex) {
+     async reqTopHeads(lang, country, keyIndex) {
           const newsApi = new NewsAPI(this.apiKeys[keyIndex])
           let res
           await newsApi.v2.topHeadlines({
+               language: lang,
                country: country,
                page: this.currPageNumber
           }).then(response => {
@@ -226,34 +228,35 @@ export class NewsRequster {
           do {
                let res
                try {
-                    res = await this.reqTopHeads(country, this.keysIndex)
-                    const { status, totalResults, articles: receivedNews } = res
-
-                    if (status !== "ok") {
-                         //TODO: Какие бывают ошибки на этом этапе? Классифицировать
-                         this.resObj.status = "error"
-                         this.resObj.status = "weird answer from server"
-                         return this.resObj
-                    }
-                    this.pagesLimit = fetchPageLimitator(totalResults)
-                    this.currPageNumber += 1
-
-                    const filteredArr = filteredNewsArray(receivedNews, lang, null)
-                    console.log(filteredArr.length);
-                    filteredArr.forEach(element => this.resObj.articles.push(element));
+                    res = await this.reqTopHeads(lang, country, this.keysIndex)
                } catch (error) {
                     //TODO: Классифицировать проблему с API key
                     if (error.message.match(/too many results/) || error.message.match(/too many requests/)) {
                          console.log("WE ARE IN??");
                          this.keysIndex++
                          const res = await this.newsCatcherTopHeads(lang, country)
+                         console.log(res);
                          return res
                     }
                     this.resObj.status = "error",
                          this.resObj.error = error.message
                     return this.resObj
                }
-          } while (this.currPageNumber === this.pagesLimit);
+
+               const { status, totalResults, articles: receivedNews } = res
+
+               if (status !== "ok") {
+                    //TODO: Какие бывают ошибки на этом этапе? Классифицировать
+                    this.resObj.status = "error"
+                    this.resObj.status = "weird answer from server"
+                    return this.resObj
+               }
+               this.pagesLimit = fetchPageLimitator(totalResults)
+               this.currPageNumber += 1
+
+               const filteredArr = filteredNewsArray(receivedNews, lang, null)
+               filteredArr.forEach(element => this.resObj.articles.push(element));
+          } while (this.currPageNumber !== this.pagesLimit);
           return this.resObj
      }
 }

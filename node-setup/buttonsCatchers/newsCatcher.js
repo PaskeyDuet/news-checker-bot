@@ -44,8 +44,7 @@ news.callbackQuery(/news_explore__trending/, async (ctx) => {
     const trendingInfo = ctx.session.user.news[2]
     //TODO: make newsProcessing regular
     if (trendingInfo.articles.length === 0) {
-        const res = await newsProcessing(ctx, null, "top-news")
-        console.log("ON BUTTON INFO", res.status);
+        await newsProcessing(ctx, null, "top-news")
     }
 
     await ctx.conversation.enter("trendingCheck");

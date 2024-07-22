@@ -2,7 +2,7 @@ import dateToday from "../dateToday.js";
 import { reqHelper } from "./newsFetcherManager.js";
 import { articlesLimiter, articlesObjsCreator, filteredNewsArray } from "./newsHelpers.js";
 
-export default async function (ctx, prefNum = null, mode, newKeyword = null, lang = null, country = 'us') {
+export default async function (ctx, prefNum = null, mode, newKeyword = null, lang = null, country = null) {
      const resObj = {
           status: "ok",
           error: null,
@@ -15,12 +15,8 @@ export default async function (ctx, prefNum = null, mode, newKeyword = null, lan
           let currKeyword
           currKeyword = newKeyword || ctx.session.user.news[prefNum - 1].keyword
           fetchedNewsData = await reqHelper.newsCatcherByKeyword(currKeyword)
-          console.log(fetchedNewsData.articles);
-          console.log(fetchedNewsData.error);
      } else if (mode === "top-news") {
           fetchedNewsData = await reqHelper.newsCatcherTopHeads(lang, country)
-          console.log(fetchedNewsData.articles);
-          console.log(fetchedNewsData.error);
      }
 
      if (fetchedNewsData.status !== "ok") {
