@@ -1,23 +1,30 @@
+import { keywordReturner } from "#bot/helpers/news-managment/newsHelpers.js";
 import { InlineKeyboard } from "grammy";
 
-function keywordReturner(ctx, number) { return ctx.session.user.news[number - 1].keyword }
-
-export function createNewsKeyboard(ctx) {
+export function createMainMenuKeyboard(ctx) {
      const keyword1 = keywordReturner(ctx, 1)
      const keyword2 = keywordReturner(ctx, 2)
 
      let newsPrefsKeyboard = new InlineKeyboard()
+          .text("Trending", "news_explore__trending")
+          .row()
+     if (keyword1 && !keyword2) {
+          newsPrefsKeyboard.text(`${keyword1}`, "news_explore__keyword1")
+               .row()
+     } else if (keyword1 && keyword2) {
+          newsPrefsKeyboard.text(`${keyword1}`, "news_explore__keyword1")
+          newsPrefsKeyboard.text(`${keyword2}`, "news_explore__keyword2")
+               .row()
+     }
 
      if (!keyword1 && !keyword2) {
           newsPrefsKeyboard.text('Добавить тему', 'news_change__keyword1').row()
      } else if (keyword1) {
-          newsPrefsKeyboard.text("Проверить новости", "news_check")
-               .row()
+          newsPrefsKeyboard
                .text("Изменить темы", "news_change")
                .row()
      }
-     newsPrefsKeyboard.text('Back', "back_callback")
-
+     newsPrefsKeyboard = newsPrefsKeyboard.text('Info', 'info')
      return newsPrefsKeyboard
 }
 
@@ -96,4 +103,14 @@ export function newsSliderKeyboard(articlesNumber, translated) {
      return checkingPrefsKeyboard
 }
 
+export function prefChangeFinish(ctx, prefChangeNum) {
+     // const keyword = keywordReturner(ctx, prefChangeNum)
 
+     let finishKeyboard = new InlineKeyboard()
+          .text("Посмотреть новости", `news_explore__keyword${prefChangeNum}`)
+          .row()
+          .text('Назад', "main_menu")
+          .text('Изменить тему', `news_change__keyword${prefChangeNum}`)
+
+     return finishKeyboard
+}

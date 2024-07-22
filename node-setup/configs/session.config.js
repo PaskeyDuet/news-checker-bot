@@ -3,12 +3,21 @@ export default {
           _id: null,
           news:
                [{
+                    lang: null,
+                    topic: null,
                     keyword: null,
                     articles: []
                },
                {
+                    lang: null,
+                    topic: null,
                     keyword: null,
                     articles: []
+               },
+               {
+                    lang: null,
+                    country: null,
+                    articles: [],
                }],
           isNewbie: true
      },

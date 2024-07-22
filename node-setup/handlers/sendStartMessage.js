@@ -1,5 +1,7 @@
 import getUserData from "#bot/helpers/getUserData.js";
+import prefsMenuTextGenerator from "#bot/helpers/prefsMenuTextGenerator.js";
 import { mainMenuKeyboard } from "#bot/keyboards/generalKeyboard.js";
+import { createMainMenuKeyboard } from "#bot/keyboards/newsKeyboards.js";
 
 export default async function (ctx) {
      ctx.session.routeHistory = [];
@@ -8,8 +10,17 @@ export default async function (ctx) {
 
      await getUserData(ctx)
 
-     let updatedCtx = await ctx.reply('Этот бот вам поможет', {
-          reply_markup: mainMenuKeyboard
+     let mainMenuText = ''
+     //TODO: add newBieCheck
+     mainMenuText += "Какой-то озаглавливающий текст\n\n"
+     mainMenuText += prefsMenuTextGenerator(ctx)
+
+     const prefsKeyboard = createMainMenuKeyboard(ctx)
+
+
+     let updatedCtx = await ctx.reply(`${mainMenuText}`, {
+          reply_markup: prefsKeyboard,
+          parse_mode: "HTML"
      })
 
      ctx.session.user.lastMsgId = updatedCtx.message_id;

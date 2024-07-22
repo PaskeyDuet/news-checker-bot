@@ -3,13 +3,12 @@ import { articleCheckCompiler } from "#bot/helpers/news-managment/newsHelpers.js
 import { newsSliderKeyboard } from "#bot/keyboards/newsKeyboards.js";
 import { sendNTranslate } from "#bot/server-routing/pyWebRouting.js";
 
-export async function newsCheck(conversation, ctx) {
-     const prefCheckNum = ctx.session.temp.prefCheckNum
+export async function trendingCheck(conversation, ctx) {
      const callbackObj = ctx.update.callback_query
      const chatId = callbackObj.message.chat.id;
-     const sessionedArticles = conversation.session.user.news[prefCheckNum - 1].articles
+     const sessionedArticles = conversation.session.user.news[2].articles
 
-     let messageText = articleCheckCompiler(conversation, prefCheckNum, 0)
+     let messageText = articleCheckCompiler(conversation, 3, 0, false, true)
      let messageTranslated = false
      let newsCounter = 0
      let newsLimit = Number(process.env.NEWS_QUANTITY) - 1
@@ -34,7 +33,7 @@ export async function newsCheck(conversation, ctx) {
                     newsCounter = 0
                }
           }
-          messageText = articleCheckCompiler(conversation, prefCheckNum, newsCounter)
+          messageText = articleCheckCompiler(conversation, 3, newsCounter, false)
           try {
                messageTranslated = false
                articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
@@ -51,13 +50,13 @@ export async function newsCheck(conversation, ctx) {
                }
           }
      }
-     async function translateArticle(ctx, prefCheckNum, articleNumber) {
-          const articlesSessionLink = conversation.session.user.news[prefCheckNum - 1].articles
+     async function translateArticle(ctx, articleNumber) {
+          const articlesSessionLink = conversation.session.user.news[2].articles
           const textObj = articlesSessionLink[articleNumber]
 
           if (messageTranslated) {
-               conversation.session.user.news[prefCheckNum - 1].articles[articleNumber].translated = true
-               messageText = articleCheckCompiler(conversation, prefCheckNum, newsCounter)
+               conversation.session.user.news[2].articles[articleNumber].translated = true
+               messageText = articleCheckCompiler(conversation, 3, newsCounter, false)
                messageTranslated = false
                try {
                     articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
@@ -81,14 +80,14 @@ export async function newsCheck(conversation, ctx) {
                     dataForTranslate.content = textObj.content
                     const translatedRes = await sendNTranslate(dataForTranslate)
 
-                    conversation.session.user.news[prefCheckNum - 1].articles[articleNumber].title.translated = translatedRes.title.translated
-                    conversation.session.user.news[prefCheckNum - 1].articles[articleNumber].description.translated = translatedRes.description.translated
-                    conversation.session.user.news[prefCheckNum - 1].articles[articleNumber].content.translated = translatedRes.content.translated
-                    await translateArticle(ctx, prefCheckNum, articleNumber)
+                    conversation.session.user.news[2].articles[articleNumber].title.translated = translatedRes.title.translated
+                    conversation.session.user.news[2].articles[articleNumber].description.translated = translatedRes.description.translated
+                    conversation.session.user.news[2].articles[articleNumber].content.translated = translatedRes.content.translated
+                    await translateArticle(ctx, articleNumber)
                } else if (textObj.title.translated) {
-                    conversation.session.user.news[prefCheckNum - 1].articles[articleNumber].translated = true
+                    conversation.session.user.news[2].articles[articleNumber].translated = true
                     messageTranslated = true
-                    messageText = articleCheckCompiler(conversation, prefCheckNum, newsCounter, true)
+                    messageText = articleCheckCompiler(conversation, 3, newsCounter, true)
                     try {
                          articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
                               {
@@ -118,7 +117,7 @@ export async function newsCheck(conversation, ctx) {
                if (responseData === "previous_article" || responseData === "next_article") {
                     await scrollDirectionHandler(responseData)
                } else if (responseData === "news_translate") {
-                    await translateArticle(ctx, prefCheckNum, newsCounter)
+                    await translateArticle(ctx, newsCounter)
                }
                else { break }
           }
