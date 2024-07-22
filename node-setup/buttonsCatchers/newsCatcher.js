@@ -1,44 +1,13 @@
+import sendStartMessage from "#bot/handlers/sendStartMessage.js";
 import newsProcessing from "#bot/helpers/news-managment/newsProcessing.js";
-import { createPrefsChangeKeyboard, createNewsKeyboard, createNewsPrefsKeyboard } from "#bot/keyboards/newsKeyboards.js";
+import prefsMenuTextGenerator from "#bot/helpers/prefsMenuTextGenerator.js";
+import { createPrefsChangeKeyboard, createMainMenuKeyboard, createNewsPrefsKeyboard } from "#bot/keyboards/newsKeyboards.js";
 import { Composer } from "grammy";
 
 export const news = new Composer()
 
-news.callbackQuery("news_prefs", async (ctx) => {
-    const keyword1 = ctx.session.user.news[0].keyword
-    const keyword2 = ctx.session.user.news[1].keyword
-
-    const prefsKeyboard = createNewsKeyboard(ctx)
-    let newsPrefsText = ''
-
-    if (keyword1 === null) {
-        newsPrefsText += "Вы ещё не подписаны на новости. \n"
-        newsPrefsText += "Нажмите на кнопку ниже, чтобы создать тему, по которой вы будете получать рассылку"
-
-        await ctx.editMessageText(`${newsPrefsText}`, {
-            reply_markup: prefsKeyboard,
-            parse_mode: "HTML"
-        })
-    } else if (keyword2 === null) {
-        newsPrefsText += "Вы подписаны на следующие темы:\n\n"
-        newsPrefsText += `- <b>${keyword1}</b>\n\n`
-        newsPrefsText += "Вы можете добавить ещё одну тему для получения рассылки или поменять уже имеющуюся"
-
-        await ctx.editMessageText(`${newsPrefsText}`, {
-            reply_markup: prefsKeyboard,
-            parse_mode: "HTML"
-        })
-    } else {
-        newsPrefsText += "Вы подписаны на следующие темы:\n\n"
-        newsPrefsText += `- <b>${keyword1}</b>\n`
-        newsPrefsText += `- <b>${keyword2}</b>\n\n`
-        newsPrefsText += "Чтобы изменить одну из тем рассылки выберите её название на кнопке ниже"
-
-        await ctx.editMessageText(`${newsPrefsText}`, {
-            reply_markup: prefsKeyboard,
-            parse_mode: "HTML"
-        })
-    }
+news.callbackQuery("main_menu", async (ctx) => {
+    await sendStartMessage(ctx)
 })
 
 news.callbackQuery("news_change", async (ctx) => {
@@ -64,10 +33,19 @@ news.callbackQuery(/news_explore__keyword/, async (ctx) => {
     let prefCheckNum = Number(ctx.callbackQuery.data.split("news_explore__keyword")[1]);
     ctx.session.temp.prefCheckNum = prefCheckNum
     //TODO: make newsProcessing regular
-
     if (ctx.session.user.news[prefCheckNum - 1].articles.length === 0) {
-        await newsProcessing(ctx, prefCheckNum)
+        await newsProcessing(ctx, prefCheckNum, "keyword")
     }
 
     await ctx.conversation.enter("newsCheck");
+})
+
+news.callbackQuery(/news_explore__trending/, async (ctx) => {
+    const trendingInfo = ctx.session.user.news[2]
+    //TODO: make newsProcessing regular
+    if (trendingInfo.articles.length === 0) {
+        await newsProcessing(ctx, null, "top-news")
+    }
+
+    await ctx.conversation.enter("trendingCheck");
 })

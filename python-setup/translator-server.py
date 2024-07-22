@@ -15,6 +15,8 @@ def receive_data():
     data['title']['translated'] = translate(orig_title)
     orig_description = data['description']['original']
     data['description']['translated'] = translate(orig_description)
+    orig_content = data['content']['original']
+    data['content']['translated'] = translate(orig_content)
         
     return jsonify(data)
 

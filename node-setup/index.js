@@ -5,11 +5,11 @@ import { conversations, createConversation } from "@grammyjs/conversations";
 import { hydrate } from "@grammyjs/hydrate";
 import { newsPrefsChange } from "./conversations/newsPrefsChange.js";
 import sessionConfig from "./configs/session.config.js";
-import { mainMenuKeyboard } from "./keyboards/generalKeyboard.js";
 import { news } from "./buttonsCatchers/newsCatcher.js";
 import traceRoutes from "./middleware/traceRoutes.js";
 import sendStartMessage from "./handlers/sendStartMessage.js";
 import { newsCheck } from "./conversations/newsCheck.js";
+import { trendingCheck } from "./conversations/trendsCheck.js";
 
 export const bot = new Bot(`${process.env.BOT_API_TOKEN}`);
 export const app = express()
@@ -27,13 +27,12 @@ bot.use(hydrate());
 bot.use(conversations());
 bot.use(createConversation(newsPrefsChange));
 bot.use(createConversation(newsCheck));
+bot.use(createConversation(trendingCheck));
 bot.use(traceRoutes);
 bot.use(news)
 
 bot.command('start', async (ctx) => {
-    ctx.reply("Привет. Этот бот поможет тебе", {
-        reply_markup: mainMenuKeyboard
-    })
+    await sendStartMessage(ctx)
 })
 
 bot.command('ctx', async (ctx) => {

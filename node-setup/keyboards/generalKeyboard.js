@@ -1,7 +1,7 @@
 import { InlineKeyboard } from "grammy";
 
 export const mainMenuKeyboard = new InlineKeyboard()
-    .text('News', "news_prefs")
+    .text('News', "main_menu")
 
 export const backMainMenu = new InlineKeyboard().text("‹ В главное меню", "main_menu");
 
