@@ -25,7 +25,7 @@ export async function newsPrefsChange(conversation, ctx) {
      let { message: { text: newKeyword } } = keywordMessage
      newKeyword = newKeyword.trim()
 
-     const res = await newsProcessing(ctx, prefChangeNum, "keyword", newKeyword)
+     const res = await newsProcessing(ctx, prefChangeNum, false, newKeyword)
      if (res.error === 'Empty articles arr') {
           await ctx.reply("К сожалению, по данной теме не было найдено ни одной статьи, попробуйте ввести другое слово", {
                reply_markup: prefChangeAgain(ctx)

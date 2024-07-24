@@ -2,7 +2,7 @@ import dateToday from "../dateToday.js";
 import { reqHelper } from "./newsFetcherManager.js";
 import { articlesLimiter, articlesObjsCreator, filteredNewsArray } from "./newsHelpers.js";
 
-export default async function (ctx, prefNum = null, mode, newKeyword = null, lang = null, country = null) {
+export default async function (ctx, prefNum = null, trendingMode, newKeyword = null, lang = null, country = null) {
      const resObj = {
           status: "ok",
           error: null,
@@ -10,13 +10,14 @@ export default async function (ctx, prefNum = null, mode, newKeyword = null, lan
      }
 
      let fetchedNewsData
-     if (mode === 'keyword') {
+     if (!trendingMode) {
           console.log("FETCHING PROCCESSING");
           let currKeyword
           currKeyword = newKeyword || ctx.session.user.news[prefNum - 1].keyword
           fetchedNewsData = await reqHelper.newsCatcherByKeyword(currKeyword)
-     } else if (mode === "top-news") {
+     } else if (trendingMode) {
           fetchedNewsData = await reqHelper.newsCatcherTopHeads(lang, country)
+          console.log("FETCHEDNEWSDATACHECK\n", fetchedNewsData);
      }
 
      if (fetchedNewsData.status !== "ok") {
@@ -29,16 +30,9 @@ export default async function (ctx, prefNum = null, mode, newKeyword = null, lan
           return resObj
      }
 
-     const { articles: fetchedNewsArr } = fetchedNewsData
-
-     const formattedNewsObjsArr = articlesObjsCreator(fetchedNewsArr)
-     const limitedNewsArr = articlesLimiter(formattedNewsObjsArr)
-
-     if (mode === 'keyword') {
-          ctx.session.user.news[prefNum - 1].articles = limitedNewsArr
-     } else if (mode === "top-news") {
-          ctx.session.user.news[2].articles = limitedNewsArr
-     }
+     const { articles: fetchedNewsArticles } = fetchedNewsData
+     const formattedNewsObjsArr = articlesObjsCreator(fetchedNewsArticles, lang, trendingMode)
+     const limitedNewsArr = articlesLimiter(formattedNewsObjsArr)//off
 
      resObj.articles = limitedNewsArr
 
@@ -49,5 +43,6 @@ export default async function (ctx, prefNum = null, mode, newKeyword = null, lan
      //           eng: formattedNewsObjsArr
      //      }
      // }
+     console.log("NEWSPROCESSING END", resObj.articles.length);
      return resObj
 }

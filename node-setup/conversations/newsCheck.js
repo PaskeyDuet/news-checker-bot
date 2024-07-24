@@ -1,5 +1,5 @@
 import sendStartMessage from "#bot/handlers/sendStartMessage.js";
-import { articleCheckCompiler } from "#bot/helpers/news-managment/newsHelpers.js";
+import { keywordArticleCompiler } from "#bot/helpers/news-managment/newsHelpers.js";
 import { newsSliderKeyboard } from "#bot/keyboards/newsKeyboards.js";
 import { sendNTranslate } from "#bot/server-routing/pyWebRouting.js";
 
@@ -9,7 +9,7 @@ export async function newsCheck(conversation, ctx) {
      const chatId = callbackObj.message.chat.id;
      const sessionedArticles = conversation.session.user.news[prefCheckNum - 1].articles
 
-     let messageText = articleCheckCompiler(conversation, prefCheckNum, 0)
+     let messageText = keywordArticleCompiler(conversation, prefCheckNum, 0)
      let messageTranslated = false
      let newsCounter = 0
      let newsLimit = Number(process.env.NEWS_QUANTITY) - 1
@@ -34,7 +34,7 @@ export async function newsCheck(conversation, ctx) {
                     newsCounter = 0
                }
           }
-          messageText = articleCheckCompiler(conversation, prefCheckNum, newsCounter)
+          messageText = keywordArticleCompiler(conversation, prefCheckNum, newsCounter)
           try {
                messageTranslated = false
                articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
@@ -57,7 +57,7 @@ export async function newsCheck(conversation, ctx) {
 
           if (messageTranslated) {
                conversation.session.user.news[prefCheckNum - 1].articles[articleNumber].translated = true
-               messageText = articleCheckCompiler(conversation, prefCheckNum, newsCounter)
+               messageText = keywordArticleCompiler(conversation, prefCheckNum, newsCounter)
                messageTranslated = false
                try {
                     articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
@@ -76,6 +76,7 @@ export async function newsCheck(conversation, ctx) {
           } else if (!messageTranslated) {
                if (!textObj.title.translated) {
                     const dataForTranslate = {}
+                    dataForTranslate.trends = false
                     dataForTranslate.title = textObj.title
                     dataForTranslate.description = textObj.description
                     dataForTranslate.content = textObj.content
@@ -88,7 +89,7 @@ export async function newsCheck(conversation, ctx) {
                } else if (textObj.title.translated) {
                     conversation.session.user.news[prefCheckNum - 1].articles[articleNumber].translated = true
                     messageTranslated = true
-                    messageText = articleCheckCompiler(conversation, prefCheckNum, newsCounter, true)
+                    messageText = keywordArticleCompiler(conversation, prefCheckNum, newsCounter, true)
                     try {
                          articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
                               {
@@ -120,7 +121,7 @@ export async function newsCheck(conversation, ctx) {
                } else if (responseData === "news_translate") {
                     await translateArticle(ctx, prefCheckNum, newsCounter)
                }
-               else { break }
+               else { responseData = null }
           }
      }
      while (responseData === "previous_article" || responseData === "next_article" || responseData === "news_translate")

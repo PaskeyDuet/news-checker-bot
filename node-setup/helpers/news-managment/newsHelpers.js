@@ -1,43 +1,62 @@
 import chardet from 'chardet';
-import NewsAPI from 'newsapi';
 
 export function keywordReturner(ctx, number) { return ctx.session.user.news[number - 1].keyword }
 
-export function articlesObjsCreator(articlesArr) {
-     let articleObjectsArr = []
-     articlesArr = tagsClearer(articlesArr)
-     for (let i = 0; i < articlesArr.length; i++) {
-          //Сделать разделение на поступающие русские и английские
-          let newsObj = {}
+export function articlesObjsCreator(articles, lang, trendingMode = false) {
+     if (!trendingMode) {
+          let articleObjectsArr = []
+          articles = tagsClearer(articles)
+          for (let i = 0; i < articles.length; i++) {
+               let newsObj = {}
 
-          newsObj.lang = 'eng'
-          newsObj.title = {
-               original: `${articlesArr[i].title}`,
-               translated: null
-          }
-          newsObj.source = `${articlesArr[i].source.name}`
-          newsObj.author = `${articlesArr[i].author}`
-          newsObj.description = {
-               original: `${articlesArr[i].description}`,
-               translated: null
-          }
-          newsObj.content = {
-               original: `${articlesArr[i].content}`,
-               translated: null
-          }
-          newsObj.link = `${articlesArr[i].url}`
+               newsObj.lang = lang
+               newsObj.title = {
+                    original: `${articles[i].title}`,
+                    translated: null
+               }
+               newsObj.source = `${articles[i].source.name}`
+               newsObj.author = `${articles[i].author}`
+               newsObj.description = {
+                    original: `${articles[i].description}`,
+                    translated: null
+               } || null
+               newsObj.content = {
+                    original: `${articles[i].content}`,
+                    translated: null
+               } || null
+               newsObj.link = `${articles[i].url}` || null
 
-          articleObjectsArr.push(newsObj)
+               articleObjectsArr.push(newsObj)
+          }
+          return articleObjectsArr
+     } else if (trendingMode) {
+          for (const category of articles) {
+               const articleObjs = []
+               category.articles.forEach(article => {
+                    let articleObj = {}
+
+                    articleObj.lang = lang
+                    articleObj.title = {
+                         original: `${article.title}`,
+                         translated: null
+                    }
+                    articleObj.source = `${article.source.name}`
+                    articleObj.author = `${article.author}`
+                    articleObj.link = `${article.url}` || null
+
+                    articleObjs.push(articleObj)
+               })
+               category.articles = articleObjs
+          }
+          return articles
+
      }
-
-     return articleObjectsArr
 }
 
 export function articlesLimiter(articlesArr) {
      let newsArr = []
      // let newsLimit = process.env.NEWS_QUANTITY
      let newsLimit = articlesArr.length
-
      // if (newsLimit > articlesArr.length) {
      //      newsLimit = articlesArr.length
      // }
@@ -45,66 +64,113 @@ export function articlesLimiter(articlesArr) {
      for (let i = 0; i < newsLimit; i++) {
           newsArr.push(articlesArr[i])
      }
-     return newsArr
+     return articlesArr
 }
 
-export function articleCheckCompiler(conversation, prefCheckNum, articleNumber, translationMode = false) {
+export function keywordArticleCompiler(conversation, prefCheckNum, articleNumber, translationMode = false, trendingMode = false) {
      const articlesSessionLink = conversation.session.user.news[prefCheckNum - 1].articles
-     let textObj
-     textObj = articlesSessionLink[articleNumber]
+     const textObj = articlesSessionLink[articleNumber]
      let articleText = ''
+
      if (translationMode) {
-          articleText += `<b>Title:</b>${textObj.title.translated}\n`
+          articleText += `<b>Title: </b>${textObj.title.translated}\n`
      } else {
-          articleText += `<b>Title:</b>${textObj.title.original}\n`
+          articleText += `<b>Title: </b>${textObj.title.original}\n`
      }
-     articleText += `<b>Source:</b>${textObj.source}\n`
+     articleText += `<b>Source:</b> ${textObj.source}\n`
      articleText += `<b>Author:</b> ${textObj.author}\n\n`
      if (translationMode) {
           articleText += `<b>Description:</b> ${textObj.description.translated}\n\n`
      } else {
           articleText += `<b>Description:</b> ${textObj.description.original}\n\n`
      }
+
      if (translationMode) {
           articleText += `<b>Content:</b> ${textObj.content.translated}\n\n`
      } else {
           articleText += `<b>Content:</b> ${textObj.content.original}\n\n`
      }
+
      articleText += `<a href="${textObj.link}">Read more</a>`
 
      return articleText
 }
 
+export function trendsArticleCompiler(conversation, catCounter, translationMode = false) {
+     const catSessionLink = conversation.session.user.news[2]
+     const catObj = catSessionLink.articles[catCounter]
+     const catName = catObj.category
+     const catArticles = catObj.articles
+     let headsLimit = 5
+     if (catArticles.length < headsLimit) {
+          headsLimit = catArticles.length
+     }
+     let headsText = `~<b>${catName.toUpperCase()}</b>~\n`
+
+     for (let i = 0; i < headsLimit; i++) {
+          const article = catArticles[i]
+          headsText += '----\n'
+          if (translationMode) {
+               headsText += `<b>Title: </b>${article.title.translated}\n`
+          } else {
+               headsText += `<b>Title: </b>${article.title.original}\n`
+          }
+          headsText += `<b>Source:</b> ${article.source}\n`
+          headsText += `<b>Author:</b> ${article.author}\n`
+          headsText += `<a href="${article.link}">Read more</a>\n`
+     }
+     return headsText
+}
+
 const keywordsCheck = (regex, str) => regex.test(str)
 
-export function filteredNewsArray(newsArr, lang = "en", keyword) {
-     const clearedNewsArr = newsArr.filter(article =>
+const garbageFilter = (arr) => {
+     return arr.filter(article =>
           article.title !== '[Removed]' &&
-          article.author !== null &&
-          article.description !== null)
-     const langFilteredNews = clearedNewsArr.filter(article => {
-          const { lang: articleLang } = chardet.analyse(Buffer.from(article.description))[1];
+          article.title !== null &&
+          article.author !== null)
+}
+
+const langFilter = (arr, lang) => {
+     return arr.filter(article => {
+          const langTestStr = article.description || article.content || article.title
+          const { lang: articleLang } = chardet.analyse(Buffer.from(langTestStr))[1];
           return articleLang === lang
      })
-     if (keyword) {
-          let keywordFilteredArr
-          if (keyword.split(' ').length > 1) {
-               const regExp = regexForMultiKeywords(keyword)
-               keywordFilteredArr = langFilteredNews.filter(article =>
-                    keywordsCheck(regExp, article.title) ||
-                    keywordsCheck(regExp, article.description) ||
-                    keywordsCheck(regExp, article.content)
-               )
-          } else {
-               keywordFilteredArr = langFilteredNews.filter(article =>
-                    article.title.split(' ').includes(keyword) ||
-                    article.description.split(' ').includes(keyword) ||
-                    article.content.split(' ').includes(keyword)
-               )
-          }
-          return keywordFilteredArr
+}
+
+const keywordFilter = (arr, keyword) => {
+     let keywordFilteredArr
+
+     if (keyword.split(' ').length > 1) {
+          const regExp = regexForMultiKeywords(keyword)
+          keywordFilteredArr = arr.filter(article =>
+               keywordsCheck(regExp, article.title) ||
+               keywordsCheck(regExp, article.description) ||
+               keywordsCheck(regExp, article.content)
+          )
+     } else {
+          keywordFilteredArr = arr.filter(article =>
+               (article.title && article.title.split(' ').includes(keyword)) ||
+               (article.description && article.description.split(' ').includes(keyword)) ||
+               (article.content && article.content.split(' ').includes(keyword))
+
+          )
      }
-     return langFilteredNews
+     return keywordFilteredArr
+}
+
+export function filteredNewsArray(articles, lang = "en", keyword = null, trendingMode = false) {
+     if (keyword) {
+          const clearedNewsArr = garbageFilter(articles)
+          const langFilteredNews = langFilter(clearedNewsArr, lang)
+          const keywordFilteredNews = keywordFilter(langFilteredNews, keyword)
+          return keywordFilteredNews
+     } else if (trendingMode) {
+          const clearedNewsArr = garbageFilter(articles)
+          const langFilteredNews = langFilter(clearedNewsArr, lang)
+          return langFilteredNews
+     }
 }
 
 function regexForMultiKeywords(keywordsString) {
@@ -138,125 +204,12 @@ export function fetchPageLimitator(totalResults) {
 }
 
 export function tagsClearer(articlesArr) {
-     const tagsRegExp = /<ul>|<\/ul>|<li>|<\/li>|\\n/gm
+     const tagsRegExp = /<(\S?)[^>]>.?|<.*?>|\\n/gm
      const tagsClearedArr = articlesArr.reduce((acc, article) => {
-          article.content = article.content.replace(tagsRegExp, '')
+          article.description = (article.description && article.description.replace(tagsRegExp, ''))
+          article.content = (article.description && article.content.replace(tagsRegExp, ''))
           acc.push(article)
           return acc
      }, [])
      return tagsClearedArr
-}
-export class NewsRequster {
-     constructor(apiKeys) {
-          this.apiKeys = apiKeys;
-          this.keysIndex = 0;
-          this.currPageNumber = 1;
-          this.pagesLimit = 1;
-          this.resObj = {
-               status: "ok",
-               error: null,
-               articles: []
-          }
-     }
-
-     async reqByKeyword(keyword, lang, keysIndex) {
-          console.log(keysIndex);
-          const newsApi = new NewsAPI(this.apiKeys[keysIndex])
-          let res
-          await newsApi.v2.everything({
-               q: `${keyword}`,
-               language: lang,
-               page: this.currPageNumber
-          }).then(response => {
-               res = response;
-          })
-          return res
-     }
-
-     async newsCatcherByKeyword(keyword, lang = "en", country = 'us') {
-          do {
-               let res
-               try {
-                    res = await this.reqByKeyword(keyword, lang, this.keysIndex)
-                    const { status, totalResults, articles: receivedNews } = res
-
-                    if (status !== "ok") {
-                         //TODO: Какие бывают ошибки на этом этапе? Классифицировать
-                         this.resObj.status = "error"
-                         this.resObj.status = "weird answer from server"
-                         return this.resObj
-                    } else if (receivedNews.length === 0) {
-                         this.resObj.error = "Empty articles arr"
-                         return this.resObj
-                    }
-                    this.pagesLimit = fetchPageLimitator(totalResults)
-                    // this.currPageNumber += 1
-                    const filteredArr = filteredNewsArray(receivedNews, lang, keyword)
-                    filteredArr.forEach(element => this.resObj.articles.push(element));
-               } catch (error) {
-                    console.log(error.message);
-                    //TODO: Классифицировать проблему с API key
-                    if (error.message.match(/too many results/) || error.message.match(/too many requests/)) {
-                         console.log("INSIDE");
-                         this.keysIndex++
-                         const res = await this.newsCatcherByKeyword(keyword)
-                         console.log("LEAVING");
-                         return res
-                    }
-                    this.resObj.status = "error",
-                         this.resObj.error = error.message
-                    return this.resObj
-               }
-          } while (this.currPageNumber !== this.pagesLimit);
-          return this.resObj
-     }
-
-     async reqTopHeads(lang, country, keyIndex) {
-          const newsApi = new NewsAPI(this.apiKeys[keyIndex])
-          let res
-          await newsApi.v2.topHeadlines({
-               language: lang,
-               country: country,
-               page: this.currPageNumber
-          }).then(response => {
-               res = response;
-          })
-          return res
-     }
-
-     async newsCatcherTopHeads(lang = 'en', country = 'us') {
-          do {
-               let res
-               try {
-                    res = await this.reqTopHeads(lang, country, this.keysIndex)
-               } catch (error) {
-                    //TODO: Классифицировать проблему с API key
-                    if (error.message.match(/too many results/) || error.message.match(/too many requests/)) {
-                         console.log("WE ARE IN??");
-                         this.keysIndex++
-                         const res = await this.newsCatcherTopHeads(lang, country)
-                         console.log(res);
-                         return res
-                    }
-                    this.resObj.status = "error",
-                         this.resObj.error = error.message
-                    return this.resObj
-               }
-
-               const { status, totalResults, articles: receivedNews } = res
-
-               if (status !== "ok") {
-                    //TODO: Какие бывают ошибки на этом этапе? Классифицировать
-                    this.resObj.status = "error"
-                    this.resObj.status = "weird answer from server"
-                    return this.resObj
-               }
-               this.pagesLimit = fetchPageLimitator(totalResults)
-               this.currPageNumber += 1
-
-               const filteredArr = filteredNewsArray(receivedNews, lang, null)
-               filteredArr.forEach(element => this.resObj.articles.push(element));
-          } while (this.currPageNumber !== this.pagesLimit);
-          return this.resObj
-     }
 }

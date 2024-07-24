@@ -34,7 +34,10 @@ news.callbackQuery(/news_explore__keyword/, async (ctx) => {
     ctx.session.temp.prefCheckNum = prefCheckNum
     //TODO: make newsProcessing regular
     if (ctx.session.user.news[prefCheckNum - 1].articles.length === 0) {
-        await newsProcessing(ctx, prefCheckNum, "keyword")
+
+        const res = await newsProcessing(ctx, prefCheckNum, false)
+        ctx.session.user.news[prefCheckNum - 1].articles = res.articles
+
     }
 
     await ctx.conversation.enter("newsCheck");
@@ -44,7 +47,8 @@ news.callbackQuery(/news_explore__trending/, async (ctx) => {
     const trendingInfo = ctx.session.user.news[2]
     //TODO: make newsProcessing regular
     if (trendingInfo.articles.length === 0) {
-        await newsProcessing(ctx, null, "top-news")
+        const res = await newsProcessing(ctx, null, true, null, 'en', 'us')
+        ctx.session.user.news[2].articles = res.articles
     }
 
     await ctx.conversation.enter("trendingCheck");

@@ -36,7 +36,8 @@ bot.command('start', async (ctx) => {
 })
 
 bot.command('ctx', async (ctx) => {
-    console.log(ctx.session.user)
+    console.log(ctx.session.user.news[0].articles[0])
+    console.log(ctx.session.user.news[1].articles[0])
 })
 
 bot.callbackQuery("main_menu", async (ctx) => {
