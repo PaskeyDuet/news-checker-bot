@@ -1,6 +1,7 @@
 import dateToday from "../dateToday.js";
-import { reqHelper } from "./newsFetcherManager.js";
-import { articlesLimiter, articlesObjsCreator, filteredNewsArray } from "./newsHelpers.js";
+import { dbHelper, reqHelper } from "#bot/index.js";
+import { articlesLimiter, articlesObjsCreator } from "./newsHelpers.js";
+import MongoHelper from "#bot/dbSetup/classes/MongoHelper.js";
 
 export default async function (ctx, prefNum = null, trendingMode, newKeyword = null, lang = null, country = null) {
      const resObj = {
@@ -36,6 +37,9 @@ export default async function (ctx, prefNum = null, trendingMode, newKeyword = n
 
      resObj.articles = limitedNewsArr
 
+     if (trendingMode) {
+          await dbHelper.pushDailyTrends(resObj.articles)
+     }
      // const dbNewsByKeyword = {
      //      keyword: currKeyword,
      //      articles: {

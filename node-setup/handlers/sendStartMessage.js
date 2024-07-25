@@ -1,6 +1,5 @@
 import getUserData from "#bot/helpers/getUserData.js";
 import prefsMenuTextGenerator from "#bot/helpers/prefsMenuTextGenerator.js";
-import { mainMenuKeyboard } from "#bot/keyboards/generalKeyboard.js";
 import { createMainMenuKeyboard } from "#bot/keyboards/newsKeyboards.js";
 
 export default async function (ctx) {

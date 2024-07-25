@@ -1,5 +1,4 @@
-import { mongoHelper } from "#bot/dbSetup/controllers/MongoClasses.js";
-import { dbHelper } from "#bot/dbSetup/controllers/usersController.js";
+import { dbHelper } from "#bot/index.js"
 
 export default async function (ctx) {
      let user = ctx.session.user

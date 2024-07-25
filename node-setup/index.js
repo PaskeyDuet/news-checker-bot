@@ -10,7 +10,17 @@ import traceRoutes from "./middleware/traceRoutes.js";
 import sendStartMessage from "./handlers/sendStartMessage.js";
 import { newsCheck } from "./conversations/newsCheck.js";
 import { trendingCheck } from "./conversations/trendsCheck.js";
+import keysReturner from "./helpers/keysReturner.js";
+import { NewsRequster } from "#bot/helpers/news-managment/NewsRequester.js";
+import MongoHelper from "./dbSetup/classes/MongoHelper.js";
 
+
+const mongoUrl = process.env.MONGO_DB_URL;
+const mongoPort = process.env.MONGO_DB_PORT
+const dbName = process.env.MONGO_DB_NAME;
+
+export const dbHelper = new MongoHelper(`${mongoUrl}:${mongoPort}`, dbName);
+export const reqHelper = new NewsRequster(keysReturner())
 export const bot = new Bot(`${process.env.BOT_API_TOKEN}`);
 export const app = express()
 
@@ -36,8 +46,6 @@ bot.command('start', async (ctx) => {
 })
 
 bot.command('ctx', async (ctx) => {
-    console.log(ctx.session.user.news[0].articles[0])
-    console.log(ctx.session.user.news[1].articles[0])
 })
 
 bot.callbackQuery("main_menu", async (ctx) => {

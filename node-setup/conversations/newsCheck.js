@@ -9,7 +9,7 @@ export async function newsCheck(conversation, ctx) {
      const chatId = callbackObj.message.chat.id;
      const sessionedArticles = conversation.session.user.news[prefCheckNum - 1].articles
 
-     let messageText = keywordArticleCompiler(conversation, prefCheckNum, 0)
+     let messageText = keywordArticleCompiler(ctx, conversation, prefCheckNum, 0)
      let messageTranslated = false
      let newsCounter = 0
      let newsLimit = Number(process.env.NEWS_QUANTITY) - 1
@@ -34,7 +34,7 @@ export async function newsCheck(conversation, ctx) {
                     newsCounter = 0
                }
           }
-          messageText = keywordArticleCompiler(conversation, prefCheckNum, newsCounter)
+          messageText = keywordArticleCompiler(ctx, conversation, prefCheckNum, newsCounter)
           try {
                messageTranslated = false
                articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
@@ -56,8 +56,7 @@ export async function newsCheck(conversation, ctx) {
           const textObj = articlesSessionLink[articleNumber]
 
           if (messageTranslated) {
-               conversation.session.user.news[prefCheckNum - 1].articles[articleNumber].translated = true
-               messageText = keywordArticleCompiler(conversation, prefCheckNum, newsCounter)
+               messageText = keywordArticleCompiler(ctx, conversation, prefCheckNum, newsCounter)
                messageTranslated = false
                try {
                     articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
@@ -75,6 +74,7 @@ export async function newsCheck(conversation, ctx) {
                }
           } else if (!messageTranslated) {
                if (!textObj.title.translated) {
+                    console.log('Inside second first if');
                     const dataForTranslate = {}
                     dataForTranslate.trends = false
                     dataForTranslate.title = textObj.title
@@ -87,9 +87,8 @@ export async function newsCheck(conversation, ctx) {
                     conversation.session.user.news[prefCheckNum - 1].articles[articleNumber].content.translated = translatedRes.content.translated
                     await translateArticle(ctx, prefCheckNum, articleNumber)
                } else if (textObj.title.translated) {
-                    conversation.session.user.news[prefCheckNum - 1].articles[articleNumber].translated = true
                     messageTranslated = true
-                    messageText = keywordArticleCompiler(conversation, prefCheckNum, newsCounter, true)
+                    messageText = keywordArticleCompiler(ctx, conversation, prefCheckNum, newsCounter, true)
                     try {
                          articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
                               {

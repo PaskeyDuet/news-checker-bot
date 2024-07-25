@@ -67,7 +67,7 @@ export function articlesLimiter(articlesArr) {
      return articlesArr
 }
 
-export function keywordArticleCompiler(conversation, prefCheckNum, articleNumber, translationMode = false, trendingMode = false) {
+export function keywordArticleCompiler(ctx, conversation, prefCheckNum, articleNumber, translationMode = false) {
      const articlesSessionLink = conversation.session.user.news[prefCheckNum - 1].articles
      const textObj = articlesSessionLink[articleNumber]
      let articleText = ''

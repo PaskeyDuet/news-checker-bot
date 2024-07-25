@@ -1,5 +1,5 @@
 import sendStartMessage from "#bot/handlers/sendStartMessage.js";
-import { keywordArticleCompiler, trendsArticleCompiler } from "#bot/helpers/news-managment/newsHelpers.js";
+import { trendsArticleCompiler } from "#bot/helpers/news-managment/newsHelpers.js";
 import { newsSliderKeyboard } from "#bot/keyboards/newsKeyboards.js";
 import { sendNTranslate } from "#bot/server-routing/pyWebRouting.js";
 

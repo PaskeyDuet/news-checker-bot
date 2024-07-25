@@ -1,5 +1,4 @@
 import axios from "axios"
-import { app } from "../index.js";
 
 const pyServerUrl = process.env.PY_TRANSLATOR_URL
 const pyServerPort = process.env.PY_TRANSLATOR_PORT
