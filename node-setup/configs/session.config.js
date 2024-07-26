@@ -1,6 +1,8 @@
 export default {
      user: {
           _id: null,
+          newsapiOrgKey: null,
+          creditsLeft: null,
           news:
                [{
                     lang: null,

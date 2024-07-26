@@ -1,3 +1,5 @@
+import { languagesDict } from "#bot/configs/dict.config.js";
+import { getEmoji } from "#bot/helpers/getEmoji.js";
 import { keywordReturner } from "#bot/helpers/news-managment/newsHelpers.js";
 import { InlineKeyboard } from "grammy";
 
@@ -80,8 +82,25 @@ export function createNewsPrefsKeyboard(ctx) {
      return prefsKeyboard
 }
 
+export function createLangChoose() {
+     let languagesKeyboard = new InlineKeyboard()
+
+     for (const lang in languagesDict) {
+          const transLang = languagesDict[lang]
+          languagesKeyboard = languagesKeyboard.text(`${getEmoji(lang)}${transLang}`, `${lang}`)
+     }
+     languagesKeyboard = languagesKeyboard.row().text("Главное меню", "main_menu")
+
+     return languagesKeyboard
+}
+
 export const keywordChangeBack = new InlineKeyboard()
      .text("Главное меню", "main_menu")
+
+export const newApiKeyKeyboard = () =>
+     new InlineKeyboard()
+          .text("Главное меню", "main_menu")
+          .text("Далее", "new_api_next")
 
 export function newsSliderKeyboard(articlesNumber, translated) {
      let checkingPrefsKeyboard = new InlineKeyboard()

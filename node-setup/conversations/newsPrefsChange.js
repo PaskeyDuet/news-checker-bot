@@ -1,16 +1,21 @@
-import { backButton } from "#bot/keyboards/generalKeyboard.js";
-import { keywordChangeBack, prefChangeAgain, prefChangeFinish } from "#bot/keyboards/newsKeyboards.js";
+import { backButton, backMainMenu } from "#bot/keyboards/generalKeyboard.js";
+import { createLangChoose, keywordChangeBack, newApiKeyKeyboard, prefChangeAgain, prefChangeFinish } from "#bot/keyboards/newsKeyboards.js";
 import unlessActions from "./helpers/unlessActions.js";
 import sendStartMessage from "#bot/handlers/sendStartMessage.js";
 import newsProcessing from "#bot/helpers/news-managment/newsProcessing.js";
 import { dbHelper } from "#bot/index.js";
+import { regMedia } from "#bot/configs/mediaObjs.js";
+import { InputMediaBuilder } from "grammy";
+import validateApiKey from "./helpers/validateApiKey.js";
+import apiKeyGetter from "./helpers/apiKeyGetter.js";
 
 export async function newsPrefsChange(conversation, ctx) {
      const prefChangeNum = ctx.session.temp.prefChangeNum
      const userId = ctx.session.user._id
+     const userIsNewbie = ctx.session.user.isNewbie
 
      await ctx.editMessageText('Введите название темы, новости по которой вы бы хотели получить', {
-          reply_markup: backButton
+          reply_markup: createLangChoose()
      })
 
      const keywordMessage = await conversation.waitFor(':text', {
@@ -23,6 +28,14 @@ export async function newsPrefsChange(conversation, ctx) {
      })
      let { message: { text: newKeyword } } = keywordMessage
      newKeyword = newKeyword.trim()
+
+     //TOFIX: refactor it
+     response = await conversation.waitUn()
+
+     if (userIsNewbie) {
+          await apiKeyGetter(conversation, ctx)
+     }
+     const userApiKey = conversation.session.user.news.newsapiOrgKey
 
      const dbTopic = await dbHelper.findTopic(newKeyword)
      if (!dbTopic) {

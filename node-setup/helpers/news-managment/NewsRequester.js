@@ -9,6 +9,18 @@ export class NewsRequster {
           this.pagesLimit = 1;
      }
 
+     async testReq(apiKey) {
+          const newsApi = new NewsAPI(apiKey)
+          let res
+          await newsApi.v2.everything({
+               q: `USA`,
+               language: 'en',
+          }).then(response => {
+               res = response;
+          })
+          return res
+     }
+
      async reqByKeyword(keyword, lang, keysIndex) {
           const newsApi = new NewsAPI(this.apiKeys[keysIndex])
           let res
@@ -54,6 +66,10 @@ export class NewsRequster {
                          this.keysIndex++
                          const res = await this.newsCatcherByKeyword(keyword)
                          console.log("LEAVING");
+                         return res
+                    } else if (error.message.match(/socket hang up/)) {
+                         console.log("newsCatcherByKeyword: ", error.message);
+                         const res = await this.newsCatcherTopHeads(lang, country)
                          return res
                     }
                     resObj.status = "error",
@@ -111,6 +127,10 @@ export class NewsRequster {
                if (error.message.match(/too many results/) || error.message.match(/too many requests/)) {
                     console.log("WE ARE IN ENDLESS KEY SEARCHING??");
                     this.keysIndex++
+                    const res = await this.newsCatcherTopHeads(lang, country)
+                    return res
+               } else if (error.message.match(/socket hang up/)) {
+                    console.log("newsCatcherTopHeads: ", error.message);
                     const res = await this.newsCatcherTopHeads(lang, country)
                     return res
                }

@@ -61,6 +61,21 @@ export default class MongoHelper extends MongoMethods {
           }
      }
 
+     async updateNewsKey(id, key) {
+          try {
+               await this.connect();
+               const query = { _id: id }
+               const update = { $set: { newsapiOrgKey: key, isNewbie: false } }
+
+               const insertOneRes = await this.updateOne(this.usersCollection, query, update);
+               // console.log(insertOneRes);
+          } catch (e) {
+               console.error(e);
+          } finally {
+               await this.close();
+          }
+     }
+
      async createKeywordNews(keyword, articlesArr) {
           try {
                await this.connect();
