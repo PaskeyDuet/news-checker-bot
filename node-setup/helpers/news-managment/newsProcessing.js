@@ -3,7 +3,7 @@ import { dbHelper, reqHelper } from "#bot/index.js";
 import { articlesLimiter, articlesObjsCreator } from "./newsHelpers.js";
 import MongoHelper from "#bot/dbSetup/classes/MongoHelper.js";
 
-export default async function (ctx, prefNum = null, trendingMode, newKeyword = null, lang = null, country = null) {
+export default async function (ctx, apiKey, prefNum = null, trendingMode, newKeyword = null, lang = null, country = null) {
      const resObj = {
           status: "ok",
           error: null,
@@ -15,7 +15,7 @@ export default async function (ctx, prefNum = null, trendingMode, newKeyword = n
           console.log("FETCHING PROCCESSING");
           let currKeyword
           currKeyword = newKeyword || ctx.session.user.news[prefNum - 1].keyword
-          fetchedNewsData = await reqHelper.newsCatcherByKeyword(currKeyword)
+          fetchedNewsData = await reqHelper.newsCatcherByKeyword(apiKey, currKeyword, lang)
      } else if (trendingMode) {
           fetchedNewsData = await reqHelper.newsCatcherTopHeads(lang, country)
           console.log("FETCHEDNEWSDATACHECK\n", fetchedNewsData);
@@ -40,13 +40,7 @@ export default async function (ctx, prefNum = null, trendingMode, newKeyword = n
      if (trendingMode) {
           await dbHelper.pushDailyTrends(resObj.articles)
      }
-     // const dbNewsByKeyword = {
-     //      keyword: currKeyword,
-     //      articles: {
-     //           date: dateToday(),
-     //           eng: formattedNewsObjsArr
-     //      }
-     // }
+
      console.log("NEWSPROCESSING END", resObj.articles.length);
      return resObj
 }

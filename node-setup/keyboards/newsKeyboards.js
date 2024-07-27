@@ -102,11 +102,16 @@ export const newApiKeyKeyboard = () =>
           .text("Главное меню", "main_menu")
           .text("Далее", "new_api_next")
 
-export function newsSliderKeyboard(articlesNumber, translated) {
+export function newsSliderKeyboard(articlesNumber, translated, lang = 'en') {
      let checkingPrefsKeyboard = new InlineKeyboard()
      const translateText = () => {
-          if (translated) { return "🇷🇺->🇺🇸" }
-          else { return "🇺🇸->🇷🇺" }
+          if (lang === 'ru') {
+               if (translated) { return "🇺🇸->🇷🇺" }
+               else { return "🇷🇺->🇺🇸" }
+          } else if (lang === 'en') {
+               if (translated) { return "🇷🇺->🇺🇸" }
+               else { return "🇺🇸->🇷🇺" }
+          }
      }
      if (articlesNumber === 0) {
           checkingPrefsKeyboard.text(translateText(), "news_translate")

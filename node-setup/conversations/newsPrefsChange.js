@@ -8,6 +8,7 @@ import { regMedia } from "#bot/configs/mediaObjs.js";
 import { InputMediaBuilder } from "grammy";
 import validateApiKey from "./helpers/validateApiKey.js";
 import apiKeyGetter from "./helpers/apiKeyGetter.js";
+import langChoosing from "./helpers/langChoosing.js";
 
 export async function newsPrefsChange(conversation, ctx) {
      const prefChangeNum = ctx.session.temp.prefChangeNum
@@ -15,7 +16,7 @@ export async function newsPrefsChange(conversation, ctx) {
      const userIsNewbie = ctx.session.user.isNewbie
 
      await ctx.editMessageText('Введите название темы, новости по которой вы бы хотели получить', {
-          reply_markup: createLangChoose()
+          reply_markup: backButton
      })
 
      const keywordMessage = await conversation.waitFor(':text', {
@@ -29,8 +30,7 @@ export async function newsPrefsChange(conversation, ctx) {
      let { message: { text: newKeyword } } = keywordMessage
      newKeyword = newKeyword.trim()
 
-     //TOFIX: refactor it
-     response = await conversation.waitUn()
+     const articlesLang = await langChoosing(conversation, ctx)
 
      if (userIsNewbie) {
           await apiKeyGetter(conversation, ctx)
@@ -39,7 +39,7 @@ export async function newsPrefsChange(conversation, ctx) {
 
      const dbTopic = await dbHelper.findTopic(newKeyword)
      if (!dbTopic) {
-          const res = await newsProcessing(ctx, prefChangeNum, false, newKeyword)
+          const res = await newsProcessing(ctx, userApiKey, prefChangeNum, false, newKeyword, articlesLang)
           if (res.error === 'Empty articles arr') {
                await ctx.reply("К сожалению, по данной теме не было найдено ни одной статьи, попробуйте ввести другое слово", {
                     reply_markup: prefChangeAgain(ctx)
@@ -51,9 +51,10 @@ export async function newsPrefsChange(conversation, ctx) {
                return
           }
 
-          await dbHelper.createKeywordNews(newKeyword, res.articles)
+          await dbHelper.createKeywordNews(newKeyword, res.articles, articlesLang)
 
           conversation.session.user.news[prefChangeNum - 1].keyword = newKeyword
+          conversation.session.user.news[prefChangeNum - 1].lang = articlesLang
           conversation.session.user.news[prefChangeNum - 1].articles = res.articles
           conversation.session.temp.prefChangeNum = null
 
@@ -81,7 +82,7 @@ export async function newsPrefsChange(conversation, ctx) {
           const difference = currDate - lastArticleDate
 
           if (difference > dayMilliseconds) {
-               const res = await newsProcessing(ctx, prefChangeNum, false, newKeyword)
+               const res = await newsProcessing(ctx, userApiKey, prefChangeNum, false, newKeyword, articlesLang)
                if (res.error === 'Empty articles arr') {
                     await ctx.reply("К сожалению, по данной теме не было найдено ни одной статьи, попробуйте ввести другое слово", {
                          reply_markup: prefChangeAgain(ctx)

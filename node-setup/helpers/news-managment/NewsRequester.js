@@ -17,12 +17,13 @@ export class NewsRequster {
                language: 'en',
           }).then(response => {
                res = response;
+               console.log(res);
           })
           return res
      }
 
-     async reqByKeyword(keyword, lang, keysIndex) {
-          const newsApi = new NewsAPI(this.apiKeys[keysIndex])
+     async reqByKeyword(apiKey, keyword, lang) {
+          const newsApi = new NewsAPI(apiKey)
           let res
           await newsApi.v2.everything({
                q: `${keyword}`,
@@ -34,7 +35,7 @@ export class NewsRequster {
           return res
      }
 
-     async newsCatcherByKeyword(keyword, lang = "en", country = 'us') {
+     async newsCatcherByKeyword(apiKey, keyword, lang = "en", country = 'us') {
           const resObj = {
                status: "ok",
                error: null,
@@ -43,7 +44,7 @@ export class NewsRequster {
           do {
                let res
                try {
-                    res = await this.reqByKeyword(keyword, lang, this.keysIndex)
+                    res = await this.reqByKeyword(apiKey, keyword, lang, this.keysIndex)
                     const { status, totalResults, articles: receivedNews } = res
                     if (status !== "ok") {
                          //TODO: Какие бывают ошибки на этом этапе? Классифицировать
@@ -100,7 +101,7 @@ export class NewsRequster {
                error: null,
                articles: []
           }
-          const categoriesArr = [/*'business', 'general', 'health', 'science', */'sports', 'technology']
+          const categoriesArr = ['business', 'general', 'health', 'science', 'sports', 'technology']
           try {
                const categorizedRes = {}
                const promises = categoriesArr.map(async (cat) => {

@@ -79,18 +79,20 @@ export function keywordArticleCompiler(ctx, conversation, prefCheckNum, articleN
      }
      articleText += `<b>Source:</b> ${textObj.source}\n`
      articleText += `<b>Author:</b> ${textObj.author}\n\n`
-     if (translationMode) {
-          articleText += `<b>Description:</b> ${textObj.description.translated}\n\n`
-     } else {
-          articleText += `<b>Description:</b> ${textObj.description.original}\n\n`
+     if (textObj.description.original && textObj.description.original !== null && textObj.description.original !== '') {
+          if (translationMode) {
+               articleText += `<b>Description:</b> ${textObj.description.translated}\n\n`
+          } else {
+               articleText += `<b>Description:</b> ${textObj.description.original}\n\n`
+          }
      }
-
-     if (translationMode) {
-          articleText += `<b>Content:</b> ${textObj.content.translated}\n\n`
-     } else {
-          articleText += `<b>Content:</b> ${textObj.content.original}\n\n`
+     if (textObj.content.original && textObj.content.original !== null && textObj.content.original !== '') {
+          if (translationMode) {
+               articleText += `<b>Content:</b> ${textObj.content.translated}\n\n`
+          } else {
+               articleText += `<b>Content:</b> ${textObj.content.original}\n\n`
+          }
      }
-
      articleText += `<a href="${textObj.link}">Read more</a>`
 
      return articleText
@@ -139,6 +141,31 @@ const langFilter = (arr, lang) => {
      })
 }
 
+const addMapping = (arr) => {
+     const clearedOfExceedPuncts = arr.map(article => {
+          let description = article.description
+          let content = article.content
+          if (!punctsValidation(description)) {
+               article.description = ''
+          } else if (!punctsValidation(content)) {
+               article.content = ''
+          }
+          return article
+     })
+     console.log(clearedOfExceedPuncts);
+     return clearedOfExceedPuncts
+}
+
+const punctsValidation = (str) => {
+     const regex = /[^\w\s]|_/g;
+     const sanitizedText = str.replace(regex, ' ');
+     const words = sanitizedText.trim().split(/\s+/);
+     const wordCount = words.length;
+     if (wordCount < 15) {
+          return false
+     } return true
+}
+
 const keywordFilter = (arr, keyword) => {
      let keywordFilteredArr
 
@@ -163,9 +190,15 @@ const keywordFilter = (arr, keyword) => {
 export function filteredNewsArray(articles, lang = "en", keyword = null, trendingMode = false) {
      if (keyword) {
           const clearedNewsArr = garbageFilter(articles)
-          const langFilteredNews = langFilter(clearedNewsArr, lang)
-          const keywordFilteredNews = keywordFilter(langFilteredNews, keyword)
-          return keywordFilteredNews
+          if (lang === "en") {
+               const langFilteredNews = langFilter(clearedNewsArr, lang)
+               const keywordFilteredNews = keywordFilter(langFilteredNews, keyword)
+               return keywordFilteredNews
+          }
+          const keywordFilteredNews = keywordFilter(clearedNewsArr, keyword)
+          const stringCheckedNews = addMapping(keywordFilteredNews)
+          return stringCheckedNews
+
      } else if (trendingMode) {
           const clearedNewsArr = garbageFilter(articles)
           const langFilteredNews = langFilter(clearedNewsArr, lang)
@@ -206,8 +239,13 @@ export function fetchPageLimitator(totalResults) {
 export function tagsClearer(articlesArr) {
      const tagsRegExp = /<(\S?)[^>]>.?|<.*?>|\\n/gm
      const tagsClearedArr = articlesArr.reduce((acc, article) => {
-          article.description = (article.description && article.description.replace(tagsRegExp, ''))
-          article.content = (article.description && article.content.replace(tagsRegExp, ''))
+          console.log(article);
+          if (article.description) {
+               article.description = (article.description && article.description.replace(tagsRegExp, ''))
+
+          } else if (article.content) {
+               article.content = (article.description && article.content.replace(tagsRegExp, ''))
+          }
           acc.push(article)
           return acc
      }, [])

@@ -8,18 +8,15 @@ export async function newsCheck(conversation, ctx) {
      const callbackObj = ctx.update.callback_query
      const chatId = callbackObj.message.chat.id;
      const sessionedArticles = conversation.session.user.news[prefCheckNum - 1].articles
-
-     let messageText = keywordArticleCompiler(ctx, conversation, prefCheckNum, 0)
      let messageTranslated = false
      let newsCounter = 0
-     let newsLimit = Number(process.env.NEWS_QUANTITY) - 1
-     if (newsLimit > sessionedArticles.length) {
-          newsLimit = sessionedArticles.length - 1
-     }
+     let newsLimit = sessionedArticles.length - 1
+     let currArticleLang = conversation.session.user.news[prefCheckNum - 1].articles[newsCounter].lang
 
+     let messageText = keywordArticleCompiler(ctx, conversation, prefCheckNum, newsCounter)
      let articleMessage = await ctx.api.editMessageText(chatId, callbackObj.message.message_id, messageText, {
           parse_mode: "HTML",
-          reply_markup: newsSliderKeyboard(newsLimit, messageTranslated)
+          reply_markup: newsSliderKeyboard(newsLimit, messageTranslated, currArticleLang)
      })
 
      async function scrollDirectionHandler(direction) {
@@ -37,10 +34,11 @@ export async function newsCheck(conversation, ctx) {
           messageText = keywordArticleCompiler(ctx, conversation, prefCheckNum, newsCounter)
           try {
                messageTranslated = false
+               currArticleLang = conversation.session.user.news[prefCheckNum - 1].articles[newsCounter].lang
                articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
                     {
                          parse_mode: "HTML",
-                         reply_markup: newsSliderKeyboard(newsLimit, messageTranslated)
+                         reply_markup: newsSliderKeyboard(newsLimit, messageTranslated, currArticleLang)
                     })
                await ctx.answerCallbackQuery();
           } catch (error) {
@@ -58,11 +56,12 @@ export async function newsCheck(conversation, ctx) {
           if (messageTranslated) {
                messageText = keywordArticleCompiler(ctx, conversation, prefCheckNum, newsCounter)
                messageTranslated = false
+               currArticleLang = conversation.session.user.news[prefCheckNum - 1].articles[newsCounter].lang
                try {
                     articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
                          {
                               parse_mode: "HTML",
-                              reply_markup: newsSliderKeyboard(newsLimit, messageTranslated)
+                              reply_markup: newsSliderKeyboard(newsLimit, messageTranslated, currArticleLang)
                          })
                     await ctx.answerCallbackQuery();
                } catch (error) {
@@ -74,9 +73,9 @@ export async function newsCheck(conversation, ctx) {
                }
           } else if (!messageTranslated) {
                if (!textObj.title.translated) {
-                    console.log('Inside second first if');
                     const dataForTranslate = {}
                     dataForTranslate.trends = false
+                    dataForTranslate.lang = textObj.lang
                     dataForTranslate.title = textObj.title
                     dataForTranslate.description = textObj.description
                     dataForTranslate.content = textObj.content
@@ -88,12 +87,13 @@ export async function newsCheck(conversation, ctx) {
                     await translateArticle(ctx, prefCheckNum, articleNumber)
                } else if (textObj.title.translated) {
                     messageTranslated = true
+                    currArticleLang = conversation.session.user.news[prefCheckNum - 1].articles[newsCounter].lang
                     messageText = keywordArticleCompiler(ctx, conversation, prefCheckNum, newsCounter, true)
                     try {
                          articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
                               {
                                    parse_mode: "HTML",
-                                   reply_markup: newsSliderKeyboard(newsLimit, messageTranslated)
+                                   reply_markup: newsSliderKeyboard(newsLimit, messageTranslated, currArticleLang)
                               })
                          await ctx.answerCallbackQuery();
                     } catch (error) {

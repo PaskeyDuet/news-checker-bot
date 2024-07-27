@@ -33,8 +33,10 @@ news.callbackQuery(/news_explore__keyword/, async (ctx) => {
     let prefCheckNum = Number(ctx.callbackQuery.data.split("news_explore__keyword")[1]);
     ctx.session.temp.prefCheckNum = prefCheckNum
     const newsPref = ctx.session.user.news[prefCheckNum - 1]
+    const apiKey = ctx.session.user.newsapiOrgKey
     const keyword = newsPref.keyword
     const articles = newsPref.articles
+    const lang = newsPref.lang
     const dbTopic = await dbHelper.findTopic(keyword)
 
     const currDate = new Date().getTime()
@@ -49,8 +51,8 @@ news.callbackQuery(/news_explore__keyword/, async (ctx) => {
     const difference = currDate - lastDbDate
 
     if (difference > dayMilliseconds) {
-        const res = await newsProcessing(ctx, prefCheckNum, false)
-        await dbHelper.pushKeywordNews(_id, res.articles)
+        const res = await newsProcessing(ctx, apiKey, null, prefCheckNum, false)
+        await dbHelper.pushKeywordNews(_id, res.articles, lang)
         ctx.session.user.news[prefCheckNum - 1].articles = res.articles
     } else if (articles.length === 0 || (difference < dayMilliseconds)) {
         ctx.session.user.news[prefCheckNum - 1].articles = lastDbArticles
@@ -60,9 +62,10 @@ news.callbackQuery(/news_explore__keyword/, async (ctx) => {
 
 news.callbackQuery(/news_explore__trending/, async (ctx) => {
     const trendingInfo = ctx.session.user.news[2]
+
     const reqRes = await dbHelper.getLastDailyTrends()
     if (!reqRes) {
-        const res = await newsProcessing(ctx, null, true, null, 'en', 'us')
+        const res = await newsProcessing(ctx, null, null, true, null, 'en', 'us')
         ctx.session.user.news[2].articles = res.articles
         await ctx.conversation.enter("trendingCheck");
         return
@@ -73,8 +76,8 @@ news.callbackQuery(/news_explore__trending/, async (ctx) => {
     const currTime = new Date().getTime()
     const difference = currTime - lastUpdateTime
     if (difference > dayMilliseconds) {
-        const res = await newsProcessing(ctx, null, true, null, 'en', 'us')
-        ctx.session.user.news[2].articles = articles
+        const res = await newsProcessing(ctx, apiKey, null, null, true, null, 'en', 'us')
+        ctx.session.user.news[2].articles = res.articles
     }
     if (trendingInfo.articles.length === 0) {
         ctx.session.user.news[2].articles = articles

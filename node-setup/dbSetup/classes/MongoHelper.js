@@ -76,12 +76,13 @@ export default class MongoHelper extends MongoMethods {
           }
      }
 
-     async createKeywordNews(keyword, articlesArr) {
+     async createKeywordNews(keyword, articlesArr, lang) {
           try {
                await this.connect();
                const currDate = new Date().getTime()
                const document = {
                     keyword: keyword,
+                    lang: lang,
                     allArticles: [{
                          date: currDate,
                          articles: articlesArr
@@ -95,7 +96,7 @@ export default class MongoHelper extends MongoMethods {
           }
      }
 
-     async pushKeywordNews(_id, articlesArr) {
+     async pushKeywordNews(_id, articlesArr, lang) {
           try {
                await this.connect();
                const currDate = new Date().getTime()

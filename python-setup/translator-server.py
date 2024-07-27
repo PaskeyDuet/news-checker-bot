@@ -3,28 +3,43 @@ from deep_translator import GoogleTranslator
 
 app = Flask(__name__)
 
-def translate(text):
-    translated = GoogleTranslator("auto", "ru").translate(text)
+def translate(text, fromLang, toLang):
+    translated = GoogleTranslator(fromLang, toLang).translate(text)
+    print(translated)
     return translated
 
 @app.route('/data', methods=['POST'])
 def receive_data():
     data = request.json
-    if (data['trends'] == False):
-        orig_title = data['title']['original']
-        data['title']['translated'] = translate(orig_title)
-        orig_description = data['description']['original']
-        data['description']['translated'] = translate(orig_description)
-        orig_content = data['content']['original']
-        data['content']['translated'] = translate(orig_content)
-    elif (data['trends'] == True):
-        titles_len = len(data['objs'])
-        for title in range(titles_len):
-            print()
-            orig_title = data['objs'][title][f'{title}']['original']
-            data['objs'][title][f'{title}']['translated'] = translate(orig_title)
-        
-    return jsonify(data)
+    print(data)
+    article_lang = ''
+    translateToLang = ''
+    
+    try:
+        if data['lang'] == 'ru':
+            article_lang = 'ru'
+            translateToLang = 'en'
+        elif data['lang'] == 'en':
+            article_lang = 'en'
+            translateToLang = 'ru'
+
+        if (data['trends'] == False):
+            orig_title = data['title']['original']
+            data['title']['translated'] = translate(orig_title, article_lang, translateToLang)
+            orig_description = data['description']['original']
+            data['description']['translated'] = translate(orig_description, article_lang, translateToLang)
+            orig_content = data['content']['original']
+            data['content']['translated'] = translate(orig_content, article_lang, translateToLang)
+        elif (data['trends'] == True):
+            titles_len = len(data['objs'])
+            for title in range(titles_len):
+                print()
+                orig_title = data['objs'][title][f'{title}']['original']
+                data['objs'][title][f'{title}']['translated'] = translate(orig_title)
+            
+        return jsonify(data)
+    except Exception as e:
+        print ("Error happened", e)
 
 if __name__ == '__main__':
     app.run(port=5000)
