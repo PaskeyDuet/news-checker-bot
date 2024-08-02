@@ -66,6 +66,9 @@ news.callbackQuery(/news_explore__trending/, async (ctx) => {
     const reqRes = await dbHelper.getLastDailyTrends()
     if (!reqRes) {
         const res = await newsProcessing(ctx, null, null, true, null, 'en', 'us')
+        const dbRes = await dbHelper.pushDailyTrends(res.articles)
+        const stringDbRes = dbRes.insertedId.toString()
+        ctx.session.user.news[2].id = stringDbRes
         ctx.session.user.news[2].articles = res.articles
         await ctx.conversation.enter("trendingCheck");
         return
@@ -76,7 +79,10 @@ news.callbackQuery(/news_explore__trending/, async (ctx) => {
     const currTime = new Date().getTime()
     const difference = currTime - lastUpdateTime
     if (difference > dayMilliseconds) {
-        const res = await newsProcessing(ctx, apiKey, null, null, true, null, 'en', 'us')
+        const res = await newsProcessing(ctx, null, null, true, null, 'en', 'us')
+        const dbRes = await dbHelper.pushDailyTrends(res.articles)
+        const stringDbRes = dbRes.insertedId.toString()
+        ctx.session.user.news[2].id = stringDbRes
         ctx.session.user.news[2].articles = res.articles
     }
     if (trendingInfo.articles.length === 0) {

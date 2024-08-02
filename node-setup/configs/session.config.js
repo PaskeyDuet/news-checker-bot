@@ -17,6 +17,7 @@ export default {
                     articles: []
                },
                {
+                    id: null,
                     lang: null,
                     country: null,
                     articles: [],
