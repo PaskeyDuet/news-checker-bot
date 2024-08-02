@@ -105,7 +105,7 @@ export default class MongoHelper extends MongoMethods {
                     articles: articlesArr
                }
                const pushOneRes = await this.updateOne(this.allNewsCollection, { _id: _id }, { $push: { allArticles: document } });
-               console.log("pushKeywordNews Res", pushOneRes);
+               // console.log("pushKeywordNews Res", pushOneRes);
           } catch (e) {
                console.error(e);
           } finally {
@@ -122,6 +122,21 @@ export default class MongoHelper extends MongoMethods {
                     categories: categoriesArr
                }
                const insertOneRes = await this.insertOne(this.trendingCollection, document);
+               return insertOneRes
+          } catch (e) {
+               console.error(e);
+          } finally {
+               await this.close();
+          }
+     }
+
+     async trendArticlesUpdate(id, articlesArr) {
+          try {
+               await this.connect();
+               const query = { _id: id }
+               const update = { $set: { categories: articlesArr } }
+               const updateOneRes = await this.updateOne(this.trendingCollection, query, update);
+               // console.log(updateOneRes);
           } catch (e) {
                console.error(e);
           } finally {

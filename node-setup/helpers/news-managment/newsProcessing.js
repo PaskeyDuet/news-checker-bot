@@ -37,10 +37,6 @@ export default async function (ctx, apiKey, prefNum = null, trendingMode, newKey
 
      resObj.articles = limitedNewsArr
 
-     if (trendingMode) {
-          await dbHelper.pushDailyTrends(resObj.articles)
-     }
-
      console.log("NEWSPROCESSING END", resObj.articles.length);
      return resObj
 }

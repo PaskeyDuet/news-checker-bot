@@ -12,18 +12,15 @@ def translate(text, fromLang, toLang):
 def receive_data():
     data = request.json
     print(data)
-    article_lang = ''
-    translateToLang = ''
+    article_lang = 'en'
+    translateToLang = 'ru'
     
     try:
-        if data['lang'] == 'ru':
-            article_lang = 'ru'
-            translateToLang = 'en'
-        elif data['lang'] == 'en':
-            article_lang = 'en'
-            translateToLang = 'ru'
-
         if (data['trends'] == False):
+            if data['lang'] == 'ru':
+                article_lang = 'ru'
+                translateToLang = 'en'
+
             orig_title = data['title']['original']
             data['title']['translated'] = translate(orig_title, article_lang, translateToLang)
             orig_description = data['description']['original']
@@ -35,7 +32,7 @@ def receive_data():
             for title in range(titles_len):
                 print()
                 orig_title = data['objs'][title][f'{title}']['original']
-                data['objs'][title][f'{title}']['translated'] = translate(orig_title)
+                data['objs'][title][f'{title}']['translated'] = translate(orig_title, article_lang, translateToLang)
             
         return jsonify(data)
     except Exception as e:

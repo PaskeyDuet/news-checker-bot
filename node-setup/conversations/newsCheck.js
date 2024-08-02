@@ -42,10 +42,11 @@ export async function newsCheck(conversation, ctx) {
                     })
                await ctx.answerCallbackQuery();
           } catch (error) {
-               console.log("scrollDirectionHandler ERROR\n", error.message);
                if (!error.message.includes("query is too old")) {
-                    await sendStartMessage(ctx)
-                    return
+                    console.log("scrollDirectionHandler ERROR\n");
+                    if (error.message.includes("Unsupported start tag")) {
+                         await scrollDirectionHandler(direction)
+                    }
                }
           }
      }

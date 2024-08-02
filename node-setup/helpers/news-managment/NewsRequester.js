@@ -81,13 +81,12 @@ export class NewsRequster {
           return resObj
      }
 
-     async reqTopHeads(lang, country, category, keyIndex) {
+     async reqTopHeads(country, category, keyIndex) {
           console.log(category);
           const newsApi = new NewsAPI(this.apiKeys[keyIndex])
           let res
           await newsApi.v2.topHeadlines({
                category: category,
-               language: lang,
                country: country
           }).then(response => {
                res = response;
@@ -101,12 +100,12 @@ export class NewsRequster {
                error: null,
                articles: []
           }
-          const categoriesArr = ['business', 'general', 'health', 'science', 'sports', 'technology']
+          const categoriesArr = ['business', 'general', /*'health', 'science', 'sports', 'technology'*/]
           try {
                const categorizedRes = {}
                const promises = categoriesArr.map(async (cat) => {
                     try {
-                         const response = await this.reqTopHeads(lang, country, cat, this.keysIndex)
+                         const response = await this.reqTopHeads(country, cat, this.keysIndex)
                          if (response.status === 'ok') {
                               categorizedRes[cat] = response
                          } else {
