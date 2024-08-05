@@ -39,4 +39,4 @@ def receive_data():
         print ("Error happened", e)
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    app.run(port=5001)

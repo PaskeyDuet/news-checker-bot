@@ -10,7 +10,7 @@ export async function trendingCheck(conversation, ctx) {
      const chatId = callbackObj.message.chat.id;
      const sessionedCats = conversation.session.user.news[2].articles
      const catByNumber = (counter) => sessionedCats[counter]
-     let langTemp = new Map()
+     const langTemp = new Map()
      for (const cat of sessionedCats) {
           langTemp.set(cat.category, { translated: false })
      }
@@ -26,25 +26,25 @@ export async function trendingCheck(conversation, ctx) {
           reply_markup: newsSliderKeyboard(catLimit, messageTranslated)
      })
 
-     const responseObj = { currCQData: null }
      let responseData
      do {
           conversation.log('In')
-          responseObj.currCQData = await conversation.wait()
-          const response = responseObj.currCQData
+          conversation.log(responseData)
+          const response = await conversation.wait()
+
           if (response.update?.callback_query?.data) {
                responseData = response.update.callback_query.data
                if (responseData === "previous_article" || responseData === "next_article") {
                     await scrollDirectionHandler(responseData)
                } else if (responseData === "news_translate") {
-                    const res = await translateButtonHandler(ctx, conversation, catCounter, langTemp)
-                    langTemp = res
+                    await translateButtonHandler(ctx, conversation, catCounter)
                }
                else { responseData = null }
           }
+          conversation.log('outting')
      }
      while (responseData === "previous_article" || responseData === "next_article" || responseData === "news_translate")
-
+     conversation.log('out og while')
      async function scrollDirectionHandler(direction) {
           if (direction === "previous_article") {
                catCounter -= 1
@@ -75,6 +75,7 @@ export async function trendingCheck(conversation, ctx) {
                     return
                }
           }
+          conversation.log("direction handked")
      }
 
      async function translateButtonHandler(ctx, conversation, catCounter) {
@@ -116,11 +117,15 @@ export async function trendingCheck(conversation, ctx) {
                          obj[i] = catArticles[i].title
                          dataForTranslate.objs.push(obj)
                     }
-                    const translatedRes = await conversation.external(() => sendNTranslate(dataForTranslate))
-                    for (let i = 0; i < translatedRes.objs.length; i++) {
-                         conversation.session.user.news[2].articles[catCounter].articles[i].title.translated = translatedRes.objs[i][`${i}`].translated
+                    try {
+                         const translatedRes = await conversation.external(() => sendNTranslate(dataForTranslate))
+                         for (let i = 0; i < translatedRes.objs.length; i++) {
+                              conversation.session.user.news[2].articles[catCounter].articles[i].title.translated = translatedRes.objs[i][`${i}`].translated
+                         }
+                         translationUpdate = true
+                    } catch (error) {
+                         conversation.log(error)
                     }
-                    translationUpdate = true
 
                }
                langData.translated = true
@@ -140,12 +145,15 @@ export async function trendingCheck(conversation, ctx) {
                     }
                }
           }
+          conversation.log("Translation done")
      }
 
      if (translationUpdate) {
+          const data = conversation.session.user.news[2]
+          conversation.log("DB INFO", data)
           const trendingDbId = conversation.session.user.news[2].id
           const articlesArr = conversation.session.user.news[2].articles
-          console.log(trendingDbId);
+          console.log("DB INFO", trendingDbId);
           await conversation.external(async () => await dbHelper.trendArticlesUpdate(trendingDbId, articlesArr))
      }
      ctx.session.temp.prefCheckNum = null

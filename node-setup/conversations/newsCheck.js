@@ -14,10 +14,20 @@ export async function newsCheck(conversation, ctx) {
      let currArticleLang = conversation.session.user.news[prefCheckNum - 1].articles[newsCounter].lang
 
      let messageText = keywordArticleCompiler(ctx, conversation, prefCheckNum, newsCounter)
-     let articleMessage = await ctx.api.editMessageText(chatId, callbackObj.message.message_id, messageText, {
-          parse_mode: "HTML",
-          reply_markup: newsSliderKeyboard(newsLimit, messageTranslated, currArticleLang)
-     })
+     let articleMessage
+     try {
+          articleMessage = await ctx.api.editMessageText(chatId, callbackObj.message.message_id, messageText, {
+               parse_mode: "HTML",
+               reply_markup: newsSliderKeyboard(newsLimit, messageTranslated, currArticleLang)
+          })
+     } catch (error) {
+          if (!error.message.includes("query is too old")) {
+               console.log("scrollDirectionHandler ERROR\n", error);
+               if (error.message.includes("Unsupported start tag")) {
+                    await scrollDirectionHandler("next_article")
+               }
+          }
+     }
 
      async function scrollDirectionHandler(direction) {
           if (direction === "previous_article") {
@@ -43,7 +53,7 @@ export async function newsCheck(conversation, ctx) {
                await ctx.answerCallbackQuery();
           } catch (error) {
                if (!error.message.includes("query is too old")) {
-                    console.log("scrollDirectionHandler ERROR\n");
+                    console.log("scrollDirectionHandler ERROR\n", error);
                     if (error.message.includes("Unsupported start tag")) {
                          await scrollDirectionHandler(direction)
                     }
