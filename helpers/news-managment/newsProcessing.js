@@ -1,4 +1,4 @@
-import { dbHelper, reqHelper } from "#bot/index.js";
+import { reqHelper } from "#bot/index.js";
 import { articlesLimiter, articlesObjsCreator } from "./newsHelpers.js";
 
 export default async function (ctx, { apiKey, prefNum = null, trendingMode = false, newKeyword = null, lang = null, country = null }) {
