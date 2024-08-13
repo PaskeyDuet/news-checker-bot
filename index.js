@@ -12,7 +12,7 @@ import { newsCheck } from "./conversations/newsCheck.js";
 import { trendingCheck } from "./conversations/trendsCheck.js";
 import keysReturner from "./helpers/keysReturner.js";
 import { NewsRequster } from "#bot/helpers/news-managment/NewsRequester.js";
-import MongoHelper from "./dbSetup/classes/MongoHelper.js";
+import MongoHelper from "#bot/dbClasses/MongoHelper.js";
 
 
 const mongoUrl = process.env.MONGO_DB_URL;
