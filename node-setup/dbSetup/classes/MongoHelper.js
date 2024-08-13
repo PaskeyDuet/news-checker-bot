@@ -32,10 +32,10 @@ export default class MongoHelper extends MongoMethods {
           }
      }
 
-     async findTopic(keyword) {
+     async findTopic(keyword, topicLang) {
           try {
                await this.connect();
-               const foundTopic = await this.findOne(this.allNewsCollection, { keyword: keyword });
+               const foundTopic = await this.findOne(this.allNewsCollection, { keyword: keyword, lang: topicLang });
                return foundTopic
           } catch (e) {
                console.error(e);
@@ -44,13 +44,19 @@ export default class MongoHelper extends MongoMethods {
           }
      }
 
-     async updateKeyword(id, prefNum, newKeyword) {
+     async updatePrefData(id, prefNum, newKeyword, lang, articleId) {
           try {
                await this.connect();
                const query = { _id: id }
-               const dbPrefNum = prefNum - 1
+               const dbPrefNum = prefNum
 
-               const update = { $set: { ['news.' + dbPrefNum + '.keyword']: newKeyword } }
+               const update = {
+                    $set: {
+                         ['news.' + dbPrefNum + '.lang']: lang,
+                         ['news.' + dbPrefNum + '.keyword']: newKeyword,
+                         ['news.' + dbPrefNum + '._id']: articleId
+                    }
+               }
 
                const insertOneRes = await this.updateOne(this.usersCollection, query, update);
                // console.log(insertOneRes);
@@ -89,6 +95,7 @@ export default class MongoHelper extends MongoMethods {
                     }]
                }
                const createOneRes = await this.insertOne(this.allNewsCollection, document);
+               return createOneRes
           } catch (e) {
                console.error(e);
           } finally {
@@ -119,10 +126,33 @@ export default class MongoHelper extends MongoMethods {
                const currDate = new Date().getTime()
                const document = {
                     date: currDate,
-                    categories: categoriesArr
+                    allArticles: categoriesArr
                }
                const insertOneRes = await this.insertOne(this.trendingCollection, document);
                return insertOneRes
+          } catch (e) {
+               console.error(e);
+          } finally {
+               await this.close();
+          }
+     }
+
+     async articlesUpdate(id, articlesArr, { trending }) {
+          try {
+               await this.connect();
+               const query = { _id: id }
+
+               if (trending) {
+                    const update = { $set: { [`allArticles`]: articlesArr } }
+                    const updateOneRes = await this.updateOne(this.trendingCollection, query, update);
+                    // console.log(updateOneRes);
+               } else {
+                    const document = await this.findOne(this.allNewsCollection, query)
+                    const lastIndex = document.allArticles.length - 1
+                    const update = { $set: { [`allArticles.${lastIndex}.articles`]: articlesArr } }
+                    const updateOneRes = await this.updateOne(this.allNewsCollection, query, update);
+                    // console.log('articlesUpdate db info', updateOneRes);
+               }
           } catch (e) {
                console.error(e);
           } finally {

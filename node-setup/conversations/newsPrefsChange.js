@@ -1,78 +1,37 @@
-import { backButton, backMainMenu } from "#bot/keyboards/generalKeyboard.js";
-import { createLangChoose, keywordChangeBack, newApiKeyKeyboard, prefChangeAgain, prefChangeFinish } from "#bot/keyboards/newsKeyboards.js";
-import unlessActions from "./helpers/unlessActions.js";
+import { backButton } from "#bot/keyboards/generalKeyboard.js";
 import sendStartMessage from "#bot/handlers/sendStartMessage.js";
-import newsProcessing from "#bot/helpers/news-managment/newsProcessing.js";
 import { dbHelper } from "#bot/index.js";
-import { regMedia } from "#bot/configs/mediaObjs.js";
-import { InputMediaBuilder } from "grammy";
-import validateApiKey from "./helpers/validateApiKey.js";
-import apiKeyGetter from "./helpers/apiKeyGetter.js";
-import langChoosing from "./helpers/langChoosing.js";
+import { langChoosing, processNewArticles, prefUpdateFinish, topicFromMsg, apiKeyGetter } from "./helpers/prefChangeHelpers.js";
+import ctxDecode from "#bot/helpers/news-managment/ctxDecode.js";
 
 export async function newsPrefsChange(conversation, ctx) {
-     const prefChangeNum = ctx.session.temp.prefChangeNum
-     const userId = ctx.session.user._id
-     const userIsNewbie = ctx.session.user.isNewbie
+     const inf = ctxDecode(ctx).metaReturn()
+     let newArticles
 
      await ctx.editMessageText('Введите название темы, новости по которой вы бы хотели получить', {
           reply_markup: backButton
      })
 
-     const keywordMessage = await conversation.waitFor(':text', {
-          otherwise: (ctx) =>
-               unlessActions(ctx, () => {
-                    ctx.reply("Введите текст", {
-                         reply_markup: keywordChangeBack,
-                    });
-               }),
-     })
-     let { message: { text: newKeyword } } = keywordMessage
-     newKeyword = newKeyword.trim()
-
+     const newKeyword = await topicFromMsg(conversation)
      const articlesLang = await langChoosing(conversation, ctx)
 
-     if (userIsNewbie) {
+     if (inf.isNewbie) {
           await apiKeyGetter(conversation, ctx)
      }
      const userApiKey = conversation.session.user.news.newsapiOrgKey
 
-     const dbTopic = await dbHelper.findTopic(newKeyword)
+     const dbTopic = await dbHelper.findTopic(newKeyword, articlesLang)
+
      if (!dbTopic) {
-          const res = await newsProcessing(ctx, userApiKey, prefChangeNum, false, newKeyword, articlesLang)
-          if (res.error === 'Empty articles arr') {
-               await ctx.reply("К сожалению, по данной теме не было найдено ни одной статьи, попробуйте ввести другое слово", {
-                    reply_markup: prefChangeAgain(ctx)
-               })
-               return
-          } else if (res.status !== "ok") {
-               await ctx.reply("Произошла ошибка.\nЗайдите позже")
-               await sendStartMessage(ctx)
-               return
-          }
-
-          await dbHelper.createKeywordNews(newKeyword, res.articles, articlesLang)
-
-          conversation.session.user.news[prefChangeNum - 1].keyword = newKeyword
-          conversation.session.user.news[prefChangeNum - 1].lang = articlesLang
-          conversation.session.user.news[prefChangeNum - 1].articles = res.articles
-          conversation.session.temp.prefChangeNum = null
-
-          let changeFinishText = 'Тема добавлена\n'
-          if (res.articles.length === 1) {
-               changeFinishText += `We found: 1 article`
-          } else {
-               changeFinishText += `We found: ${res.articles.length} articles`
-          }
-
-          await ctx.reply(changeFinishText, {
-               reply_markup: prefChangeFinish(ctx, prefChangeNum)
-          })
-          await dbHelper.updateKeyword(userId, prefChangeNum, newKeyword)
+          const { articles: newArticles } = await processNewArticles(ctx, userApiKey, newKeyword, articlesLang)
+          const dbRes = await dbHelper.createKeywordNews(newKeyword, newArticles, articlesLang)
+          const _id = dbRes.insertedId
+          await prefUpdateFinish(conversation, ctx, inf.temp.change, newArticles, _id, newKeyword, articlesLang)
+          await dbHelper.updatePrefData(inf.userId, inf.temp.change, newKeyword, articlesLang, _id)
           return
      } else if (dbTopic) {
           const currDate = new Date().getTime()
-          const dayMilliseconds = 1000 * 61 * 60 * 24
+          const dayMilliseconds = 1000 * 60 * 60 * 24
 
           const _id = dbTopic._id;
           const dbTopicsLength = dbTopic.allArticles.length
@@ -80,51 +39,16 @@ export async function newsPrefsChange(conversation, ctx) {
           const lastArticleDate = dbTopic.allArticles[dbTopicsLength - 1].date
 
           const difference = currDate - lastArticleDate
-
           if (difference > dayMilliseconds) {
-               const res = await newsProcessing(ctx, userApiKey, prefChangeNum, false, newKeyword, articlesLang)
-               if (res.error === 'Empty articles arr') {
-                    await ctx.reply("К сожалению, по данной теме не было найдено ни одной статьи, попробуйте ввести другое слово", {
-                         reply_markup: prefChangeAgain(ctx)
-                    })
-                    return
-               } else if (res.status !== "ok") {
-                    await ctx.reply("Произошла ошибка.\nЗайдите позже")
-                    await sendStartMessage(ctx)
-                    return
-               }
-
-               conversation.session.user.news[prefChangeNum - 1].keyword = newKeyword
-               conversation.session.user.news[prefChangeNum - 1].articles = res.articles
-               conversation.session.temp.prefChangeNum = null
-
-               let changeFinishText = 'Тема добавлена\n'
-               if (res.articles.length === 1) {
-                    changeFinishText += `We found: 1 article`
-               } else {
-                    changeFinishText += `We found: ${res.articles.length} articles`
-               }
-
-               await ctx.reply(changeFinishText, {
-                    reply_markup: prefChangeFinish(ctx, prefChangeNum)
-               })
-               await dbHelper.pushKeywordNews(_id, res.articles)
-               await dbHelper.updateKeyword(userId, prefChangeNum, newKeyword)
+               const { articles: newArticles } = await processNewArticles(ctx, userApiKey, newKeyword, articlesLang)
+               await prefUpdateFinish(conversation, ctx, inf.temp.change, newArticles, _id, newKeyword, articlesLang)
+               await dbHelper.pushKeywordNews(_id, newArticles)
+               await dbHelper.updatePrefData(inf.userId, inf.temp.change, newKeyword, articlesLang, _id)
                return
           } else if (difference < dayMilliseconds) {
-               conversation.session.user.news[prefChangeNum - 1].keyword = newKeyword
-               conversation.session.user.news[prefChangeNum - 1].articles = lastArticles.articles
-
-               let changeFinishText = 'Тема добавлена\n'
-               if (lastArticles.articles.length === 1) {
-                    changeFinishText += `We found: 1 article`
-               } else {
-                    changeFinishText += `We found: ${lastArticles.articles.length} articles`
-               }
-               await ctx.reply(changeFinishText, {
-                    reply_markup: prefChangeFinish(ctx, prefChangeNum)
-               })
-               await dbHelper.updateKeyword(userId, prefChangeNum, newKeyword)
+               newArticles = lastArticles.articles
+               await prefUpdateFinish(conversation, ctx, inf.temp.change, newArticles, _id, newKeyword, articlesLang)
+               await dbHelper.updatePrefData(inf.userId, inf.temp.change, newKeyword, articlesLang, _id)
                return
           } else {
                await ctx.reply("Произошла ошибка.\nЗайдите позже")

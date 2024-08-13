@@ -1,9 +1,9 @@
 import sendStartMessage from "#bot/handlers/sendStartMessage.js";
-import { trendsArticleCompiler } from "#bot/helpers/news-managment/newsHelpers.js";
+import { trendsArticleCompiler, updateDBTranslates } from "#bot/helpers/news-managment/newsHelpers.js";
 import { newsSliderKeyboard } from "#bot/keyboards/newsKeyboards.js";
 import { sendNTranslate } from "#bot/server-routing/pyWebRouting.js";
 import { dbHelper } from "#bot/index.js";
-import { response } from "express";
+import unlessActions from "./helpers/unlessActions.js";
 
 export async function trendingCheck(conversation, ctx) {
      const callbackObj = ctx.update.callback_query
@@ -15,36 +15,45 @@ export async function trendingCheck(conversation, ctx) {
           langTemp.set(cat.category, { translated: false })
      }
      let translationUpdate = false
-     let messageTranslated = false
      let catCounter = 0
      const catLimit = sessionedCats.length - 1
      let messageText = trendsArticleCompiler(conversation, catCounter, false)
-
-     let articleMessage = await ctx.api.editMessageText(chatId, callbackObj.message.message_id, messageText, {
-          parse_mode: "HTML",
-          link_preview_options: { is_disabled: true },
-          reply_markup: newsSliderKeyboard(catLimit, messageTranslated)
-     })
+     let articleMessage
+     try {
+          articleMessage = await ctx.api.editMessageText(chatId, callbackObj.message.message_id, messageText, {
+               parse_mode: "HTML",
+               link_preview_options: { is_disabled: true },
+               reply_markup: newsSliderKeyboard(catLimit, 'en')
+          })
+     } catch (error) {
+          if (!error.message.includes("query is too old")) {
+               console.log("scrollDirectionHandler ERROR\n", error);
+          }
+     }
 
      let responseData
      do {
-          conversation.log('In')
-          conversation.log(responseData)
-          const response = await conversation.wait()
-
-          if (response.update?.callback_query?.data) {
-               responseData = response.update.callback_query.data
-               if (responseData === "previous_article" || responseData === "next_article") {
-                    await scrollDirectionHandler(responseData)
-               } else if (responseData === "news_translate") {
-                    await translateButtonHandler(ctx, conversation, catCounter)
+          const cbRegex = /^(previous_article|next_article|news_translate)$/
+          const response = await conversation.waitForCallbackQuery(cbRegex, {
+               otherwise: async (conversation) => {
+                    //FIXME: for some reason translationUpdate not always true after translation fetch. Sure it can be binded with double sendNTranslate calling
+                    if (translationUpdate) {
+                         await updateDBTranslates(conversation, { trendingMode: true })
+                    }
+                    conversation.session.temp.prefCheckNum = null
+                    unlessActions(conversation, null)
                }
-               else { responseData = null }
+          })
+          responseData = response.match[0]
+          if (responseData === "previous_article" || responseData === "next_article") {
+               await scrollDirectionHandler(responseData)
+          } else if (responseData === "news_translate") {
+               await translateButtonHandler(ctx, conversation, catCounter).catch(err => console.log(err))
           }
-          conversation.log('outting')
      }
      while (responseData === "previous_article" || responseData === "next_article" || responseData === "news_translate")
      conversation.log('out og while')
+
      async function scrollDirectionHandler(direction) {
           if (direction === "previous_article") {
                catCounter -= 1
@@ -65,7 +74,7 @@ export async function trendingCheck(conversation, ctx) {
                     {
                          parse_mode: "HTML",
                          link_preview_options: { is_disabled: true },
-                         reply_markup: newsSliderKeyboard(catLimit, isCatTranslated)
+                         reply_markup: newsSliderKeyboard(catLimit, 'en')
                     })
                await ctx.answerCallbackQuery();
           } catch (error) {
@@ -75,7 +84,6 @@ export async function trendingCheck(conversation, ctx) {
                     return
                }
           }
-          conversation.log("direction handked")
      }
 
      async function translateButtonHandler(ctx, conversation, catCounter) {
@@ -89,17 +97,18 @@ export async function trendingCheck(conversation, ctx) {
 
           if (isCatTranslated) {
                messageText = trendsArticleCompiler(conversation, catCounter, false)
+
                langData.translated = false
                try {
                     articleMessage = await ctx.api.editMessageText(chatId, articleMessage.message_id, messageText,
                          {
                               parse_mode: "HTML",
                               link_preview_options: { is_disabled: true },
-                              reply_markup: newsSliderKeyboard(catArticles.length, false, 'en')
+                              reply_markup: newsSliderKeyboard(catArticles.length, 'en')
                          })
                     await ctx.answerCallbackQuery();
                } catch (error) {
-                    console.log("ERROR\n", error.message);
+                    conversation.log("ERROR\n", error.message);
                     if (!error.message.includes("query is too old")) {
                          await sendStartMessage(ctx)
                          return
@@ -118,7 +127,8 @@ export async function trendingCheck(conversation, ctx) {
                          dataForTranslate.objs.push(obj)
                     }
                     try {
-                         const translatedRes = await conversation.external(() => sendNTranslate(dataForTranslate))
+                         const translatedRes = await sendNTranslate(dataForTranslate)
+                         // const translatedRes = await conversation.external(() => sendNTranslate(dataForTranslate))
                          for (let i = 0; i < translatedRes.objs.length; i++) {
                               conversation.session.user.news[2].articles[catCounter].articles[i].title.translated = translatedRes.objs[i][`${i}`].translated
                          }
@@ -135,29 +145,18 @@ export async function trendingCheck(conversation, ctx) {
                          {
                               parse_mode: "HTML",
                               link_preview_options: { is_disabled: true },
-                              reply_markup: newsSliderKeyboard(catLimit, true)
+                              reply_markup: newsSliderKeyboard(catLimit, 'en')
                          })
                     await ctx.answerCallbackQuery();
                } catch (error) {
-                    console.log("ERROR\n", error.message);
+                    conversation.log("ERROR\n", error.message);
                     if (!error.message.includes("query is too old")) {
                          await sendStartMessage(ctx)
                     }
                }
           }
-          conversation.log("Translation done")
+          return
      }
-
-     if (translationUpdate) {
-          const data = conversation.session.user.news[2]
-          conversation.log("DB INFO", data)
-          const trendingDbId = conversation.session.user.news[2].id
-          const articlesArr = conversation.session.user.news[2].articles
-          console.log("DB INFO", trendingDbId);
-          await conversation.external(async () => await dbHelper.trendArticlesUpdate(trendingDbId, articlesArr))
-     }
-     ctx.session.temp.prefCheckNum = null
      //TODO: Если последний текст от бота - изменять текст, если от человека - присылать стартмесседж
-     await sendStartMessage(ctx)
      return
 }

@@ -3,8 +3,11 @@ import newsProcessing from "#bot/helpers/news-managment/newsProcessing.js";
 import { createPrefsChangeKeyboard, createMainMenuKeyboard, createNewsPrefsKeyboard } from "#bot/keyboards/newsKeyboards.js";
 import { Composer } from "grammy";
 import { dbHelper } from "#bot/index.js";
+import ctxDecode from "#bot/helpers/news-managment/ctxDecode.js";
+import { keywordComplexUpdate, trendsComplexUpdate } from "#bot/helpers/news-managment/newsHelpers.js";
 
 export const news = new Composer()
+const dayMilliseconds = 1000 * 60 * 60 * 24
 
 news.callbackQuery("main_menu", async (ctx) => {
     await sendStartMessage(ctx)
@@ -18,75 +21,33 @@ news.callbackQuery("news_change", async (ctx) => {
 
 news.callbackQuery(/news_change__keyword/, async (ctx) => {
     let currentPrefNum = ctx.callbackQuery.data.split("news_change__keyword")[1];
-    ctx.session.temp.prefChangeNum = Number(currentPrefNum)
+    ctx.session.temp.prefChangeNum = Number(currentPrefNum) - 1
 
     await ctx.conversation.enter("newsPrefsChange");
 })
 
-news.callbackQuery(/news_check/, async (ctx) => {
-    await ctx.editMessageText("Выберите тему", {
-        reply_markup: createNewsPrefsKeyboard(ctx)
-    })
-})
-
 news.callbackQuery(/news_explore__keyword/, async (ctx) => {
-    let prefCheckNum = Number(ctx.callbackQuery.data.split("news_explore__keyword")[1]);
-    ctx.session.temp.prefCheckNum = prefCheckNum
-    const newsPref = ctx.session.user.news[prefCheckNum - 1]
-    const apiKey = ctx.session.user.newsapiOrgKey
-    const keyword = newsPref.keyword
-    const articles = newsPref.articles
-    const lang = newsPref.lang
-    const dbTopic = await dbHelper.findTopic(keyword)
-
     const currDate = new Date().getTime()
-    const dayMilliseconds = 1000 * 60 * 60 * 24
+    let prefCheckStr = ctx.callbackQuery.data.split("news_explore__keyword")[1];
+    const prefCheckNum = Number(prefCheckStr) - 1
+    ctx.session.temp.prefCheckNum = prefCheckNum
 
-    const _id = dbTopic._id;
-    const dbAllArticles = dbTopic.allArticles
-    const dbTopicsLength = dbAllArticles.length
-    const lastDbObj = dbAllArticles[dbTopicsLength - 1]
-    const lastDbArticles = lastDbObj.articles
-    const lastDbDate = lastDbObj.date
-    const difference = currDate - lastDbDate
+    const inf = ctxDecode(ctx).newsObjData(prefCheckNum)
+    const difference = currDate - dayMilliseconds
 
-    if (difference > dayMilliseconds) {
-        const res = await newsProcessing(ctx, apiKey, null, prefCheckNum, false)
-        await dbHelper.pushKeywordNews(_id, res.articles, lang)
-        ctx.session.user.news[prefCheckNum - 1].articles = res.articles
-    } else if (articles.length === 0 || (difference < dayMilliseconds)) {
-        ctx.session.user.news[prefCheckNum - 1].articles = lastDbArticles
+    if (!inf.articlesLen === 0 || difference > dayMilliseconds) {
+        await keywordComplexUpdate(ctx, currDate, inf, prefCheckNum)
     }
     await ctx.conversation.enter("newsCheck");
 })
 
 news.callbackQuery(/news_explore__trending/, async (ctx) => {
-    const trendingInfo = ctx.session.user.news[2]
+    const currDate = new Date().getTime()
+    const inf = ctxDecode(ctx).newsObjData(2)
+    const difference = currDate - inf.date
 
-    const reqRes = await dbHelper.getLastDailyTrends()
-    if (!reqRes) {
-        const res = await newsProcessing(ctx, null, null, true, null, 'en', 'us')
-        const dbRes = await dbHelper.pushDailyTrends(res.articles)
-        const stringDbRes = dbRes.insertedId.toString()
-        ctx.session.user.news[2].id = stringDbRes
-        ctx.session.user.news[2].articles = res.articles
-        await ctx.conversation.enter("trendingCheck");
-        return
-    }
-    const { date: lastUpdateTime, categories: articles } = reqRes
-
-    const dayMilliseconds = 1000 * 60 * 60 * 24
-    const currTime = new Date().getTime()
-    const difference = currTime - lastUpdateTime
-    if (difference > dayMilliseconds) {
-        const res = await newsProcessing(ctx, null, null, true, null, 'en', 'us')
-        const dbRes = await dbHelper.pushDailyTrends(res.articles)
-        const stringDbRes = dbRes.insertedId.toString()
-        ctx.session.user.news[2].id = stringDbRes
-        ctx.session.user.news[2].articles = res.articles
-    }
-    if (trendingInfo.articles.length === 0) {
-        ctx.session.user.news[2].articles = articles
+    if (inf.articlesLen === 0 || difference > dayMilliseconds) {
+        await trendsComplexUpdate(ctx, currDate)
     }
     await ctx.conversation.enter("trendingCheck");
 })

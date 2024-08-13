@@ -1,9 +1,7 @@
-import dateToday from "../dateToday.js";
 import { dbHelper, reqHelper } from "#bot/index.js";
 import { articlesLimiter, articlesObjsCreator } from "./newsHelpers.js";
-import MongoHelper from "#bot/dbSetup/classes/MongoHelper.js";
 
-export default async function (ctx, apiKey, prefNum = null, trendingMode, newKeyword = null, lang = null, country = null) {
+export default async function (ctx, { apiKey, prefNum = null, trendingMode = false, newKeyword = null, lang = null, country = null }) {
      const resObj = {
           status: "ok",
           error: null,
@@ -13,8 +11,7 @@ export default async function (ctx, apiKey, prefNum = null, trendingMode, newKey
      let fetchedNewsData
      if (!trendingMode) {
           console.log("FETCHING PROCCESSING");
-          let currKeyword
-          currKeyword = newKeyword || ctx.session.user.news[prefNum - 1].keyword
+          let currKeyword = newKeyword || ctx.session.user.news[prefNum].keyword
           fetchedNewsData = await reqHelper.newsCatcherByKeyword(apiKey, currKeyword, lang)
      } else if (trendingMode) {
           fetchedNewsData = await reqHelper.newsCatcherTopHeads(lang, country)

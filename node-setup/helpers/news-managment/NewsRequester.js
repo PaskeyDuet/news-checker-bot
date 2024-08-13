@@ -17,7 +17,6 @@ export class NewsRequster {
                language: 'en',
           }).then(response => {
                res = response;
-               console.log(res);
           })
           return res
      }
@@ -45,6 +44,7 @@ export class NewsRequster {
                let res
                try {
                     res = await this.reqByKeyword(apiKey, keyword, lang, this.keysIndex)
+
                     const { status, totalResults, articles: receivedNews } = res
                     if (status !== "ok") {
                          //TODO: Какие бывают ошибки на этом этапе? Классифицировать
@@ -63,10 +63,8 @@ export class NewsRequster {
                     console.log(error.message);
                     //TODO: Классифицировать проблему с API key
                     if (error.message.match(/too many results/) || error.message.match(/too many requests/)) {
-                         console.log("INSIDE");
                          this.keysIndex++
                          const res = await this.newsCatcherByKeyword(keyword)
-                         console.log("LEAVING");
                          return res
                     } else if (error.message.match(/socket hang up/)) {
                          console.log("newsCatcherByKeyword: ", error.message);
@@ -100,7 +98,7 @@ export class NewsRequster {
                error: null,
                articles: []
           }
-          const categoriesArr = ['business', 'general', /*'health', 'science', 'sports', 'technology'*/]
+          const categoriesArr = ['business', 'general', 'health', 'science', 'sports', 'technology']
           try {
                const categorizedRes = {}
                const promises = categoriesArr.map(async (cat) => {

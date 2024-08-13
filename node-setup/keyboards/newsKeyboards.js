@@ -4,8 +4,8 @@ import { keywordReturner } from "#bot/helpers/news-managment/newsHelpers.js";
 import { InlineKeyboard } from "grammy";
 
 export function createMainMenuKeyboard(ctx) {
-     const keyword1 = keywordReturner(ctx, 1)
-     const keyword2 = keywordReturner(ctx, 2)
+     const keyword1 = keywordReturner(ctx, 0)
+     const keyword2 = keywordReturner(ctx, 1)
 
      let newsPrefsKeyboard = new InlineKeyboard()
           .text("Trending", "news_explore__trending")
@@ -31,8 +31,8 @@ export function createMainMenuKeyboard(ctx) {
 }
 
 export function createPrefsChangeKeyboard(ctx) {
-     const keyword1 = keywordReturner(ctx, 1)
-     const keyword2 = keywordReturner(ctx, 2)
+     const keyword1 = keywordReturner(ctx, 0)
+     const keyword2 = keywordReturner(ctx, 1)
 
      let prefsChangeKeyboard = new InlineKeyboard()
 
@@ -63,8 +63,8 @@ export function prefChangeAgain(ctx) {
 }
 
 export function createNewsPrefsKeyboard(ctx) {
-     const keyword1 = keywordReturner(ctx, 1)
-     const keyword2 = keywordReturner(ctx, 2)
+     const keyword1 = keywordReturner(ctx, 0)
+     const keyword2 = keywordReturner(ctx, 1)
 
      let prefsKeyboard = new InlineKeyboard()
 
@@ -102,15 +102,13 @@ export const newApiKeyKeyboard = () =>
           .text("Главное меню", "main_menu")
           .text("Далее", "new_api_next")
 
-export function newsSliderKeyboard(articlesNumber, translated, lang = 'en') {
+export function newsSliderKeyboard(articlesNumber, lang = 'en') {
      let checkingPrefsKeyboard = new InlineKeyboard()
      const translateText = () => {
           if (lang === 'ru') {
-               if (translated) { return "🇺🇸->🇷🇺" }
-               else { return "🇷🇺->🇺🇸" }
+               return "🇷🇺->🇺🇸"
           } else if (lang === 'en') {
-               if (translated) { return "🇷🇺->🇺🇸" }
-               else { return "🇺🇸->🇷🇺" }
+               return "🇺🇸->🇷🇺"
           }
      }
      if (articlesNumber === 0) {
@@ -131,7 +129,7 @@ export function prefChangeFinish(ctx, prefChangeNum) {
      // const keyword = keywordReturner(ctx, prefChangeNum)
 
      let finishKeyboard = new InlineKeyboard()
-          .text("Посмотреть новости", `news_explore__keyword${prefChangeNum}`)
+          .text("Посмотреть новости", `news_explore__keyword${prefChangeNum + 1}`)
           .row()
           .text('Назад', "main_menu")
           .text('Изменить тему', `news_change__keyword${prefChangeNum}`)

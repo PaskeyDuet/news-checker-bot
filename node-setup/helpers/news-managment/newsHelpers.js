@@ -1,6 +1,58 @@
 import chardet from 'chardet';
+import { dbHelper } from "#bot/index.js";
+import newsProcessing from './newsProcessing.js';
+import sessionUpdate from '../../conversations/helpers/sessionUpdate.js';
 
-export function keywordReturner(ctx, number) { return ctx.session.user.news[number - 1].keyword }
+export function keywordReturner(ctx, number) { return ctx.session.user.news[number].keyword }
+
+export async function trendsComplexUpdate(ctx, currDate) {
+     const lastTrendsRes = await dbHelper.getLastDailyTrends()
+     const difference = currDate - lastTrendsRes.date
+     const dayMilliseconds = 1000 * 60 * 60 * 24
+
+     let _id
+     let articles
+     let date
+     if (difference > dayMilliseconds) {
+          const res = await newsProcessing(ctx, { trendingMode: true, country: 'us', lang: 'en' })
+          const dbRes = await dbHelper.pushDailyTrends(res.articles)
+          _id = dbRes.insertedId
+          articles = res.articles
+          date = currDate
+     } else {
+          _id = lastTrendsRes._id
+          articles = lastTrendsRes.allArticles
+          date = lastTrendsRes.date
+     }
+     sessionUpdate(ctx, 2).prefUpdate({ _id: _id, articles: articles, date: date })
+
+}
+
+export async function keywordComplexUpdate(ctx, currDate, inf, prefNum) {
+     const dayMilliseconds = 1000 * 60 * 60 * 24
+     const dbTopic = await dbHelper.findTopic(inf.keyword, inf.lang)
+
+     const _id = dbTopic._id;
+     const dbAllArticles = dbTopic.allArticles
+     const dbTopicsLength = dbAllArticles.length
+     const lastDbObj = dbAllArticles[dbTopicsLength - 1]
+     const lastDbArticles = lastDbObj.articles
+     const lastDbDate = lastDbObj.date
+
+     const difference = currDate - lastDbDate
+     let articles
+     let date
+     if (difference > dayMilliseconds) {
+          const res = await newsProcessing(ctx, { apiKey: inf.key, prefNum: prefNum, lang: inf.lang })
+          await dbHelper.pushKeywordNews(_id, res.articles, inf.lang)
+          articles = res.articles
+          date = currDate
+     } else {
+          articles = lastDbArticles
+          date = lastDbDate
+     }
+     sessionUpdate(ctx, prefNum).prefUpdate({ articles: articles, date: date })
+}
 
 export function articlesObjsCreator(articles, lang, trendingMode = false) {
      if (!trendingMode) {
@@ -53,6 +105,16 @@ export function articlesObjsCreator(articles, lang, trendingMode = false) {
      }
 }
 
+export async function updateDBTranslates(conversation, { trendingMode, prefNum }) {
+     if (trendingMode) {
+          prefNum = 3
+     }
+     const newsData = conversation.session.user.news[prefNum]
+     const articlesDbId = newsData._id
+     const articlesArr = newsData.articles
+     await dbHelper.articlesUpdate(articlesDbId, articlesArr, { trending: trendingMode })
+}
+
 export function articlesLimiter(articlesArr) {
      let newsArr = []
      // let newsLimit = process.env.NEWS_QUANTITY
@@ -67,8 +129,16 @@ export function articlesLimiter(articlesArr) {
      return articlesArr
 }
 
-export function keywordArticleCompiler(ctx, conversation, prefCheckNum, articleNumber, translationMode = false) {
-     const articlesSessionLink = conversation.session.user.news[prefCheckNum - 1].articles
+export const oppositeLang = (currLang) => {
+     if (currLang === 'en') {
+          return 'ru'
+     } else if (currLang === 'ru') {
+          return 'en'
+     } else { return null }
+}
+
+export function keywordArticleCompiler(ctx, conversation, prefCheckNum, articleNumber, translationMode) {
+     const articlesSessionLink = conversation.session.user.news[prefCheckNum].articles
      const textObj = articlesSessionLink[articleNumber]
      let articleText = ''
 
@@ -100,14 +170,17 @@ export function keywordArticleCompiler(ctx, conversation, prefCheckNum, articleN
 
 export function trendsArticleCompiler(conversation, catCounter, translationMode = false) {
      const catSessionLink = conversation.session.user.news[2]
+     const updateDate = new Date(catSessionLink.date).toLocaleDateString('en-us', { weekday: "long", year: "numeric", month: "short", day: "numeric" })
+
      const catObj = catSessionLink.articles[catCounter]
      const catName = catObj.category
      const catArticles = catObj.articles
+
      let headsLimit = 5
      if (catArticles.length < headsLimit) {
           headsLimit = catArticles.length
      }
-     let headsText = `~<b>${catName.toUpperCase()}</b>~\n`
+     let headsText = `~<b>${catName.toUpperCase()}</b>~\n <b>${updateDate}</b>\n`
 
      for (let i = 0; i < headsLimit; i++) {
           const article = catArticles[i]
@@ -152,7 +225,6 @@ const addMapping = (arr) => {
           }
           return article
      })
-     console.log(clearedOfExceedPuncts);
      return clearedOfExceedPuncts
 }
 
@@ -165,6 +237,8 @@ const punctsValidation = (str) => {
           return false
      } return true
 }
+
+export const currTempLang = (langTemp, counter) => langTemp.get(counter).lang
 
 const keywordFilter = (arr, keyword) => {
      let keywordFilteredArr
@@ -237,13 +311,13 @@ export function fetchPageLimitator(totalResults) {
 }
 
 export function tagsClearer(articlesArr) {
-     const tagsRegExp = /<(\S?)[^>]>.?|<.*?>|\\n/gm
+     const tagsRegExp = /<[^>]*>/gm
      const tagsClearedArr = articlesArr.reduce((acc, article) => {
-          console.log(article);
           if (article.description) {
                article.description = (article.description && article.description.replace(tagsRegExp, ''))
 
-          } else if (article.content) {
+          }
+          if (article.content) {
                article.content = (article.description && article.content.replace(tagsRegExp, ''))
           }
           acc.push(article)

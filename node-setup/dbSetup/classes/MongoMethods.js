@@ -13,6 +13,11 @@ export default class MongoMethods {
           this.db = this.client.db(this.dbName);
      }
 
+     async close() {
+          await this.client.close();
+          // console.log('Connection to MongoDB closed');
+     }
+
      async insertOne(collectionName, document) {
           const collection = this.db.collection(collectionName);
           const result = await collection.insertOne(document);
@@ -40,10 +45,5 @@ export default class MongoMethods {
      async updateOneRecord(collection, query, update) {
           const result = await collection.updateOne(query, update);
           return result;
-     }
-
-     async close() {
-          await this.client.close();
-          // console.log('Connection to MongoDB closed');
      }
 }

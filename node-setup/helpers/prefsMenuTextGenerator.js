@@ -1,8 +1,8 @@
 import { keywordReturner } from "./news-managment/newsHelpers.js"
 
 export default function (ctx) {
-     const keyword1 = keywordReturner(ctx, 1)
-     const keyword2 = keywordReturner(ctx, 2)
+     const keyword1 = keywordReturner(ctx, 0)
+     const keyword2 = keywordReturner(ctx, 1)
      let newsPrefsText = ''
 
      if (keyword1 === null) {

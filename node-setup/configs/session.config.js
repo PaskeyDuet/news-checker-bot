@@ -5,19 +5,24 @@ export default {
           creditsLeft: null,
           news:
                [{
+                    _id: null,
                     lang: null,
                     topic: null,
                     keyword: null,
-                    articles: []
+                    articles: [],
+                    date: null
                },
                {
+                    _id: null,
                     lang: null,
                     topic: null,
                     keyword: null,
-                    articles: []
+                    articles: [],
+                    date: null
                },
                {
-                    id: null,
+                    _id: null,
+                    date: null,
                     lang: null,
                     country: null,
                     articles: [],
