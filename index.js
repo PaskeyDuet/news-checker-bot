@@ -16,10 +16,10 @@ import MongoHelper from "#bot/dbClasses/MongoHelper.js";
 
 const mongoUsername = process.env.MONGO_DB_USERNAME
 const mongoPass = process.env.MONGO_DB_PASSWORD
-// const mongoUrl = process.env.MONGO_DB_URL;
-const mongoUrl = 'localhost';
-// const mongoConnectionString = `mongodb://${mongoUsername}:${mongoPass}@${mongoUrl}`
-const mongoConnectionString = `mongodb://${mongoUrl}`
+const mongoUrl = process.env.MONGO_DB_URL;
+// const mongoUrl = 'localhost';
+const mongoConnectionString = `mongodb://${mongoUsername}:${mongoPass}@${mongoUrl}`
+// const mongoConnectionString = `mongodb://${mongoUrl}`
 
 const mongoPort = process.env.MONGO_DB_PORT
 const dbName = process.env.MONGO_DB_NAME;
