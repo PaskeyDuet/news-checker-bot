@@ -1,10 +1,12 @@
-import { createLangChoose, prefChangeAgain, prefChangeFinish } from "#bot/keyboards/newsKeyboards.js"
+import { createLangChoose, newApiKeyKeyboard, prefChangeAgain, prefChangeFinish } from "#bot/keyboards/newsKeyboards.js"
 import unlessActions from "./unlessActions.js"
 import { keywordChangeBack } from "#bot/keyboards/newsKeyboards.js";
 import newsProcessing from "#bot/helpers/news-managment/newsProcessing.js";
 import { dbHelper, reqHelper } from "#bot/index.js";
 import { backMainMenu } from "#bot/keyboards/generalKeyboard.js";
 import sessionUpdate from "./sessionUpdate.js";
+import { InputMediaBuilder } from "grammy";
+import { regMedia } from "#bot/configs/mediaObjs.js";
 
 export async function apiKeyGetter(conversation, ctx) {
      const chatId = ctx.update.callback_query.message.chat.id
