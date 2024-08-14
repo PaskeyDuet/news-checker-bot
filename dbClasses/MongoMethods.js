@@ -25,7 +25,7 @@ export default class MongoMethods {
      }
 
      async insertOne(collectionName, document) {
-          const connected = this.connect()
+          const connected = await this.connect()
           console.log(connected);
           const collection = this.db.collection(collectionName);
           const result = await collection.insertOne(document);
@@ -33,7 +33,7 @@ export default class MongoMethods {
      }
 
      async findOne(collectionName, query) {
-          const connected = this.connect()
+          const connected = await this.connect()
           console.log(connected);
           const collection = this.db.collection(collectionName);
           const result = await collection.findOne(query);
@@ -41,7 +41,7 @@ export default class MongoMethods {
      }
 
      async findLastDoc(collectionName) {
-          const connected = this.connect()
+          const connected = await this.connect()
           console.log(connected);
           const collection = this.db.collection(collectionName);
           const result = await collection.find().sort({ date: -1 }).limit(1).toArray()
@@ -49,7 +49,7 @@ export default class MongoMethods {
      }
 
      async updateOne(collectionName, query, update) {
-          const connected = this.connect()
+          const connected = await this.connect()
           console.log(connected);
           const collection = this.db.collection(collectionName);
           const result = await this.updateOneRecord(collection, query, update)
@@ -57,7 +57,7 @@ export default class MongoMethods {
      }
 
      async updateOneRecord(collection, query, update) {
-          const connected = this.connect()
+          const connected = await this.connect()
           console.log(connected);
           const result = await collection.updateOne(query, update);
           return result;

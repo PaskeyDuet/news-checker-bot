@@ -7,13 +7,13 @@ export function keywordReturner(ctx, number) { return ctx.session.user.news[numb
 
 export async function trendsComplexUpdate(ctx, currDate) {
      const lastTrendsRes = await dbHelper.getLastDailyTrends()
-     const difference = currDate - lastTrendsRes.date
      const dayMilliseconds = 1000 * 60 * 60 * 24
+     console.log('info', lastTrendsRes);
 
      let _id
      let articles
      let date
-     if (difference > dayMilliseconds) {
+     if (!lastTrendsRes || (currDate - lastTrendsRes.date) > dayMilliseconds) {
           const res = await newsProcessing(ctx, { trendingMode: true, country: 'us', lang: 'en' })
           const dbRes = await dbHelper.pushDailyTrends(res.articles)
           _id = dbRes.insertedId
