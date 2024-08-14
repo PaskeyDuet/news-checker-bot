@@ -16,17 +16,18 @@ import MongoHelper from "#bot/dbClasses/MongoHelper.js";
 
 const mongoUsername = process.env.MONGO_DB_USERNAME
 const mongoPass = process.env.MONGO_DB_PASSWORD
-const mongoUrl = `mongodb://${process.env.MONGO_DB_URL}`;
+const mongoUrl = process.env.MONGO_DB_URL;
+const mongoConnectionString = `mongodb://${mongoUsername}:${mongoPass}@${mongoUrl}`
 const mongoPort = process.env.MONGO_DB_PORT
 const dbName = process.env.MONGO_DB_NAME;
 
-export const dbHelper = new MongoHelper(`${mongoUrl}:${mongoPort}`, dbName, mongoPass, mongoUsername);
+export const dbHelper = new MongoHelper(`${mongoConnectionString}:${mongoPort}`, dbName, mongoPass, mongoUsername);
 export const reqHelper = new NewsRequster(keysReturner())
 export const bot = new Bot(`${process.env.BOT_API_TOKEN}`);
 
 const appPort = process.env.EXPRESS_PORT
 export const app = express()
-console.log(`${mongoUrl}:${mongoPort}`);
+console.log(`${mongoConnectionString}:${mongoPort}`);
 
 app.listen(appPort, () => {
     console.log('JS Server running on port 5000');
