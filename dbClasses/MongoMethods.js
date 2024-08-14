@@ -12,7 +12,7 @@ export default class MongoMethods {
      async connect() {
           const auth = {
                user: this.username,
-               password: this.password``
+               password: this.password
           }
           await this.client.connect(auth);
           // console.log('Connected to MongoDB');
