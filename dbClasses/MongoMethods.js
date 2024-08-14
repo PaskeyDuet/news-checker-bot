@@ -25,40 +25,35 @@ export default class MongoMethods {
      }
 
      async insertOne(collectionName, document) {
-          const connected = await this.connect()
-          console.log(connected);
+          await this.connect()
           const collection = this.db.collection(collectionName);
           const result = await collection.insertOne(document);
           return result;
      }
 
      async findOne(collectionName, query) {
-          const connected = await this.connect()
-          console.log(connected);
+          await this.connect()
           const collection = this.db.collection(collectionName);
           const result = await collection.findOne(query);
           return result;
      }
 
      async findLastDoc(collectionName) {
-          const connected = await this.connect()
-          console.log(connected);
+          await this.connect()
           const collection = this.db.collection(collectionName);
           const result = await collection.find().sort({ date: -1 }).limit(1).toArray()
           return result
      }
 
      async updateOne(collectionName, query, update) {
-          const connected = await this.connect()
-          console.log(connected);
+          await this.connect()
           const collection = this.db.collection(collectionName);
           const result = await this.updateOneRecord(collection, query, update)
           return result;
      }
 
      async updateOneRecord(collection, query, update) {
-          const connected = await this.connect()
-          console.log(connected);
+          await this.connect()
           const result = await collection.updateOne(query, update);
           return result;
      }

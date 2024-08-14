@@ -14,8 +14,10 @@ export async function newsPrefsChange(conversation, ctx) {
 
      const newKeyword = await topicFromMsg(conversation)
      const articlesLang = await langChoosing(conversation, ctx)
+     console.log("INF", inf);
 
      if (inf.isNewbie) {
+          console.log('newbie');
           await apiKeyGetter(conversation, ctx)
      }
      const userApiKey = conversation.session.user.news.newsapiOrgKey
