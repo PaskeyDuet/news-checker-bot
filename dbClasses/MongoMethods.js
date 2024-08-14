@@ -1,14 +1,20 @@
 import { MongoClient } from "mongodb";
 
 export default class MongoMethods {
-     constructor(url, dbName) {
+     constructor(url, dbName, password, username) {
           this.url = url;
           this.dbName = dbName;
+          this.username = username;
+          this.password = password;
           this.client = new MongoClient(url);
      }
 
      async connect() {
-          await this.client.connect();
+          const auth = {
+               user: this.username,
+               password: this.password``
+          }
+          await this.client.connect(auth);
           // console.log('Connected to MongoDB');
           this.db = this.client.db(this.dbName);
      }

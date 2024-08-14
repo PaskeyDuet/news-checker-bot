@@ -1,8 +1,8 @@
 import MongoMethods from "./MongoMethods.js";
 
 export default class MongoHelper extends MongoMethods {
-     constructor(url, dbName) {
-          super(url, dbName)
+     constructor(url, dbName, password, username) {
+          super(url, dbName, password, username)
           this.usersCollection = process.env.MONGO_DB_USERS_COLLECTION;
           this.trendingCollection = process.env.MONGO_DB_TRENDING_NEWS_COLLECTION
           this.allNewsCollection = process.env.MONGO_DB_ALL_NEWS_COLLECTION
